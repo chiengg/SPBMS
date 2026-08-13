@@ -47,9 +47,9 @@ a { text-decoration: none; color: inherit; } button { font-family: inherit; curs
 .nav .group { font-size: 11px; color: var(--text-secondary); padding: var(--space-3) var(--space-5) var(--space-1); letter-spacing: .5px; }
 .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 var(--space-5); color: var(--text-primary); font-size: var(--fs-body); position: relative; transition: background .12s ease; }
 .nav-item svg { width: 17px; height: 17px; flex: none; color: var(--text-secondary); }
-.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-item.active { background: rgba(194,31,48,0.10); color: var(--brand-red); font-weight: 600; }
-.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--brand-red); border-radius: 0 2px 2px 0; }
+.nav-item:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+.nav-item.active { color: var(--brand-red); font-weight: 600; }
+
 .nav-item.active svg { color: var(--brand-red); }
 .nav-item .badge { margin-left: auto; min-width: 16px; height: 16px; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 11px; display: grid; place-items: center; }
 .nav-sub { padding-left: 18px; } .nav-sub .nav-item { height: 34px; font-size: 13px; }
@@ -177,7 +177,7 @@ table.tb tbody tr:hover { background: var(--bg-page); }
 .nav-group-title .nav-arrow { flex: none; color: var(--text-secondary); font-size: 12px; transition: transform .15s ease; }
 .nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
 .nav-group.collapsed > .nav-sub { display: none; }
-.nav-group-title.active { color: var(--brand-red); background: rgba(194,31,48,0.10); }
+.nav-group-title.active { color: var(--brand-red); }
 .nav-group-title.active .ng-icon { color: var(--brand-red); }
 .nav-sub { padding-left: 0; overflow: hidden; }
 .nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: var(--text-secondary); position: relative; transition: background .12s ease; }
@@ -727,7 +727,6 @@ function renderPunish(){
 /* init */
 renderScoreLedger(); renderAppeal(); renderWarns('all'); renderXf('all'); renderPunish();
 function mcOk(){ if(window._mcOk) window._mcOk(); else closeModal('modalConfirm'); }
-
 
 /* 侧栏手风琴：选中一级/二级菜单时，其余一级菜单自动收起 */
 function toggleNavGroup(el){ var g = el.closest('.nav-group'); if(!g) return; var open = g.classList.contains('collapsed'); document.querySelectorAll('.nav-group').forEach(function(x){ x.classList.add('collapsed'); }); if(open){ g.classList.remove('collapsed'); } }

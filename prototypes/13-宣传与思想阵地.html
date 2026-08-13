@@ -56,13 +56,12 @@ a { text-decoration: none; color: inherit; } button { font-family: inherit; curs
 .nav-group-title .nav-arrow { flex: none; color: var(--text-secondary); font-size: 12px; transition: transform .15s ease; }
 .nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
 .nav-group.collapsed > .nav-sub { display: none; }
-.nav-group-title.active { color: var(--brand-red); background: rgba(194,31,48,0.10); }
+.nav-group-title.active { color: var(--brand-red); }
 .nav-group-title.active .ng-icon { color: var(--brand-red); }
 .nav-sub { padding-left: 0; }
 .nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: var(--text-secondary); position: relative; transition: background .12s ease; }
-.nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-sub .nav-item.active { background: rgba(194,31,48,0.10); color: var(--brand-red); font-weight: 600; }
-.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: var(--brand-red); border-radius: 0 2px 2px 0; }
+.nav-sub .nav-item:hover { background: rgba(0,0,0,0.04); color: var(--text-primary); }
+.nav-sub .nav-item.active { color: var(--brand-red); font-weight: 600; }
 
 .main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
 .topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
