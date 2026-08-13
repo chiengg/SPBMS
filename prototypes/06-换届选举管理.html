@@ -39,20 +39,19 @@ body { font-family: var(--font-sans); background: var(--bg-page); color: var(--t
 a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
 
 /* 外壳 */
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
-.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
-.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
-.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: #fff; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 210; color: var(--text-primary); }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-red); display: grid; place-items: center; flex: none; }
 .sidebar .logo .emblem svg { width: 18px; height: 18px; }
-.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.5px; }
 .nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
-.nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 var(--space-5); color: rgba(255,255,255,0.9); font-size: var(--fs-body); position: relative; transition: background .12s ease; }
-.nav-item svg { width: 17px; height: 17px; flex: none; color: #FFD260; }
+.nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 var(--space-5); color: var(--text-primary); font-size: var(--fs-body); position: relative; transition: background .12s ease; }
+.nav-item svg { width: 17px; height: 17px; flex: none; color: var(--text-secondary); }
 .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
-.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
-.nav-item.active svg { color: #FFD260; }
+.nav-item.active { background: rgba(194,31,48,0.10); color: var(--brand-red); font-weight: 600; }
+.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--brand-red); border-radius: 0 2px 2px 0; }
+.nav-item.active svg { color: var(--brand-red); }
 .nav-item .badge { margin-left: auto; min-width: 16px; height: 16px; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 11px; display: grid; place-items: center; }
 
 .main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
@@ -207,17 +206,17 @@ table.tb tbody tr:hover { background: var(--bg-page); }
 
 /* 多级导航分组（手风琴） */
 .nav-group { }
-.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
-.nav-group-title:hover { background: rgba(255,255,255,0.08); }
-.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
-.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
-.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: var(--text-primary); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(0,0,0,0.04); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: var(--brand-red); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.nav-group-title .nav-arrow { flex: none; color: var(--text-secondary); font-size: 12px; transition: transform .15s ease; }
 .nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
 .nav-group.collapsed > .nav-sub { display: none; }
-.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
-.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-group-title.active { color: var(--brand-red); background: rgba(194,31,48,0.10); }
+.nav-group-title.active .ng-icon { color: var(--brand-red); }
 .nav-sub { padding-left: 0; overflow: hidden; }
-.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: var(--text-secondary); position: relative; transition: background .12s ease; }
 </style>
 </head>
 <body>
@@ -315,7 +314,6 @@ table.tb tbody tr:hover { background: var(--bg-page); }
     </div>
     
   </nav>
-  <div class="nav-deco" aria-hidden="true"></div>
 </aside>
 
 <div class="main">

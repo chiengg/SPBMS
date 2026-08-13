@@ -22,9 +22,8 @@
   --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
   --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
   --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
-  --screen-bg-top: #2A0A0E; --screen-bg-bottom: #47101A; --screen-panel: #3A0C13; --screen-card: #451219; --screen-border: #6E1A24;
-  --screen-divider: #57202A; --screen-text: #F5E7E8; --screen-text-sub: #D4AAB0; --screen-text-muted: #B98C92;
-  --screen-accent: #FFD260;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #8AA0BB;
   --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
   --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-num: var(--font-sans);
@@ -67,11 +66,11 @@ html { overflow-x: auto; }
 /* KPI 翻牌 */
 .sc-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
 .kpi-card { background: var(--screen-card); border: 1px solid var(--screen-border); border-radius: 8px; padding: var(--space-4) var(--space-5); position: relative; overflow: hidden; display: flex; align-items: center; gap: var(--space-4); }
-.kpi-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent, var(--screen-accent)); }
-.kpi-card .ki { width: 44px; height: 44px; border-radius: 8px; display: grid; place-items: center; background: rgba(255,255,255,0.08); color: var(--accent, var(--screen-accent)); flex: none; }
+.kpi-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent, var(--chart-3)); }
+.kpi-card .ki { width: 44px; height: 44px; border-radius: 8px; display: grid; place-items: center; background: rgba(91,155,217,0.14); color: var(--accent, var(--chart-3)); flex: none; }
 .kpi-card .ki svg { width: 24px; height: 24px; }
 .kpi-card .kl { font-size: 13px; color: var(--screen-text-sub); }
-.kpi-card .kv { font-size: var(--fs-flip); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; line-height: 1.1; color: var(--screen-text); text-shadow: 0 0 12px rgba(229,59,50,0.22); }
+.kpi-card .kv { font-size: var(--fs-flip); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; line-height: 1.1; color: var(--screen-text); text-shadow: 0 0 12px rgba(91,155,217,0.25); }
 .kpi-card .kv.hl { color: var(--chart-8); text-shadow: 0 0 14px rgba(242,216,115,0.3); }
 .kpi-card .kv small { font-size: 18px; font-weight: 600; }
 
@@ -92,7 +91,7 @@ html { overflow-x: auto; }
 .mini-tab { border: none; background: transparent; color: var(--screen-text-sub); font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; cursor: pointer; font-family: inherit; transition: all .15s ease; white-space: nowrap; }
 .mini-tab:hover { color: var(--screen-text); }
 .mini-tab.active { background: var(--brand-red); color: #fff; }
-.clickable:hover { border-color: var(--screen-accent); box-shadow: 0 0 0 1px rgba(255,210,96,0.28); }
+.clickable:hover { border-color: var(--chart-3); box-shadow: 0 0 0 1px rgba(91,155,217,0.25); }
 
 /* 旭日图 */
 .sunburst-wrap { display: flex; align-items: center; gap: var(--space-4); }
@@ -107,7 +106,7 @@ html { overflow-x: auto; }
 .bar-row { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 10px; font-size: 12px; min-height: 22px; }
 .bar-row .bl { color: var(--screen-text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bar-row .bt { height: 14px; background: var(--screen-divider); border-radius: 3px; overflow: hidden; min-width: 40px; display: block; }
-.bar-row .bf { background: linear-gradient(90deg, #E53B32, #FFD260); height: 100%; border-radius: 3px; min-width: 2px; display: inline-block; vertical-align: top; }
+.bar-row .bf { background: linear-gradient(90deg, var(--chart-3), var(--chart-6)); height: 100%; border-radius: 3px; min-width: 2px; display: inline-block; vertical-align: top; }
 .bar-row .bv { text-align: right; color: var(--screen-text); font-variant-numeric: tabular-nums; flex: none; }
 
 /* 环形饼图 */
@@ -121,7 +120,7 @@ html { overflow-x: auto; }
 /* 趋势 */
 .trends3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); min-height: 110px; }
 .tr-box { border: 1px solid var(--screen-border); border-radius: 6px; padding: var(--space-3); cursor: pointer; transition: border-color .15s ease; min-height: 0; }
-.tr-box:hover { border-color: var(--screen-accent); }
+.tr-box:hover { border-color: var(--chart-3); }
 .tr-box .tt { font-size: 12px; color: var(--screen-text-sub); display: flex; justify-content: space-between; gap: 6px; }
 .tr-box .tt b { color: var(--screen-text); font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; flex: none; }
 .tr-box svg { width: 100%; height: 56px; display: block; margin-top: 6px; min-height: 56px; }
@@ -145,13 +144,13 @@ html { overflow-x: auto; }
 /* 排行：在 grow panel 内占据剩余空间并独立滚动 */
 .rank-list { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; min-height: 0; flex: 1 1 auto; }
 .rank-item { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--screen-divider); font-size: 13px; cursor: pointer; min-height: 34px; }
-.rank-item:hover { background: rgba(255,210,96,0.10); }
+.rank-item:hover { background: rgba(91,155,217,0.08); }
 .rank-item .rno { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font-size: 12px; font-weight: 700; background: var(--screen-divider); color: var(--screen-text-sub); flex: none; }
 .rank-item.top .rno { background: var(--chart-8); color: #1F2329; }
 .rank-item.warn .rno { background: var(--chart-1); color: #fff; }
 .rank-item .rn { flex: 1; color: var(--screen-text); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rank-item .rbar { flex: 0 0 70px; width: 70px; height: 6px; background: var(--screen-divider); border-radius: 3px; overflow: hidden; }
-.rank-item .rbar i { display: block; height: 100%; background: linear-gradient(90deg, #E53B32, #FFD260); border-radius: 3px; min-width: 2px; }
+.rank-item .rbar i { display: block; height: 100%; background: var(--chart-3); border-radius: 3px; min-width: 2px; }
 .rank-item .rv { width: 44px; text-align: right; color: var(--screen-text-sub); font-variant-numeric: tabular-nums; flex: none; }
 .rank-sep { flex: none; font-size: 11px; color: var(--screen-text-muted); padding: 6px 4px 2px; border-top: 1px dashed var(--screen-divider); margin-top: 4px; }
 
@@ -191,19 +190,19 @@ html { overflow-x: auto; }
 .board-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: 1fr; gap: var(--space-4); overflow-y: auto; padding-right: 2px; flex: 1; min-height: 0; }
 .board-grid::-webkit-scrollbar { width: 6px; } .board-grid::-webkit-scrollbar-thumb { background: var(--screen-border); border-radius: 3px; }
 .topic-card { background: var(--screen-card); border: 1px solid var(--screen-border); border-radius: 8px; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); transition: border-color .15s ease, transform .12s ease; }
-.topic-card:hover { border-color: var(--screen-accent); transform: translateY(-2px); }
+.topic-card:hover { border-color: var(--chart-3); transform: translateY(-2px); }
 .topic-card .tc-h { display: flex; align-items: center; justify-content: space-between; }
 .topic-card .tc-t { font-size: var(--fs-module); font-weight: 700; color: var(--screen-text); }
 .topic-card .tc-ic { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; }
 .topic-card .tc-ic svg { width: 18px; height: 18px; }
 .topic-card .tc-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-.topic-card .tm { background: rgba(255,210,96,0.08); border: 1px solid var(--screen-divider); border-radius: 6px; padding: 8px 10px; }
+.topic-card .tm { background: rgba(91,155,217,0.06); border: 1px solid var(--screen-divider); border-radius: 6px; padding: 8px 10px; }
 .topic-card .tm .tml { font-size: 11px; color: var(--screen-text-sub); }
 .topic-card .tm .tmv { font-size: 18px; font-weight: 700; color: var(--screen-text); font-variant-numeric: tabular-nums; }
 .topic-card .tm .tmv.green { color: var(--chart-4); } .topic-card .tm .tmv.orange { color: var(--chart-5); } .topic-card .tm .tmv.red { color: var(--chart-1); }
 .topic-card .tc-foot { margin-top: auto; display: flex; justify-content: flex-end; }
-.drill-btn { border: 1px solid var(--screen-accent); background: transparent; color: var(--screen-accent); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; transition: all .15s ease; }
-.drill-btn:hover { background: var(--screen-accent); color: #2A0A0E; }
+.drill-btn { border: 1px solid var(--chart-3); background: transparent; color: var(--chart-3); font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; cursor: pointer; font-family: inherit; transition: all .15s ease; }
+.drill-btn:hover { background: var(--chart-3); color: #0F1B2D; }
 
 /* toast */
 .toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 500; box-shadow: var(--shadow-md); border: 1px solid var(--screen-border); }
@@ -211,32 +210,31 @@ html { overflow-x: auto; }
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
 /* ===== 侧栏基础样式（与 PC 端一致，浅色导航） ===== */
-.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
-.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
-.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
-.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: #fff; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 210; color: var(--text-primary); }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-red); display: grid; place-items: center; flex: none; }
 .sidebar .logo .emblem svg { width: 18px; height: 18px; }
-.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.5px; }
 .nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
 .nav::-webkit-scrollbar { width: 6px; } .nav::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
 
 /* 多级导航分组（按 PRD 三·核心业务模块） */
 .nav-group { }
-.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
-.nav-group-title:hover { background: rgba(255,255,255,0.08); }
-.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
-.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
-.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: var(--text-primary); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(0,0,0,0.04); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: var(--brand-red); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+.nav-group-title .nav-arrow { flex: none; color: var(--text-secondary); font-size: 12px; transition: transform .15s ease; }
 .nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
 .nav-group.collapsed > .nav-sub { display: none; }
-.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
-.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-group-title.active { color: var(--brand-red); background: rgba(194,31,48,0.10); }
+.nav-group-title.active .ng-icon { color: var(--brand-red); }
 .nav-sub { padding-left: 0; overflow: hidden; }
-.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: var(--text-secondary); position: relative; transition: background .12s ease; }
 .nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.nav-sub .nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
-.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+.nav-sub .nav-item.active { background: rgba(194,31,48,0.10); color: var(--brand-red); font-weight: 600; }
+.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: var(--brand-red); border-radius: 0 2px 2px 0; }
 </style>
 </head>
 <body>
@@ -333,7 +331,6 @@ html { overflow-x: auto; }
     </div>
 
   </nav>
-  <div class="nav-deco" aria-hidden="true"></div>
 </aside>
 
 <div class="screen">
@@ -354,7 +351,7 @@ html { overflow-x: auto; }
   <div id="viewScreen" class="view-screen">
     <!-- KPI 翻牌 -->
     <section class="sc-kpis">
-      <div class="kpi-card" style="--accent:#E53B32"><div class="ki"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="kl">党组织总数</div><div class="kv" data-to="1286" data-suffix="">0</div></div></div>
+      <div class="kpi-card" style="--accent:var(--chart-3)"><div class="ki"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="kl">党组织总数</div><div class="kv" data-to="1286" data-suffix="">0</div></div></div>
       <div class="kpi-card" style="--accent:var(--chart-2)"><div class="ki"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0" stroke="currentColor" stroke-width="2"/></svg></div><div><div class="kl">党员总数</div><div class="kv" data-to="386" data-suffix="">0</div></div></div>
       <div class="kpi-card" style="--accent:var(--chart-4)"><div class="ki"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20v-9M10 20V4M16 20v-7M21 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="kl">本月组织生活</div><div class="kv" data-to="1042" data-suffix=" 次">0</div></div></div>
       <div class="kpi-card" style="--accent:var(--chart-8)"><div class="ki" style="background:rgba(242,216,115,0.14);color:var(--chart-8)"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="kl">当月党费收缴率</div><div class="kv hl" data-to="95.3" data-dec="1" data-suffix="%">0</div></div></div>
@@ -512,10 +509,10 @@ const ring0=[{v:32,c:'#E6BC6E',l:'机关党总支'},{v:48,c:'#5B9BD9',l:'生产�
 const ring1=[{c:'#E6BC6E'}, {c:'#F2D873'}, {c:'#5B9BD9'}, {c:'#7FB5E0'}, {c:'#3FC9D4'}, {c:'#54B37F'}, {c:'#EC9A3C'}, {c:'#A98AE0'}, {c:'#E25A6B'}, {c:'#9FB0C4'}];
 function renderSunburst(){
   const cx=90,cy=90; let svg=''; let ang=0;
-  ring0.forEach(s=>{ const a1=ang+s.v/130*360; svg+=`<path d="${annular(cx,cy,26,52,ang,a1)}" fill="${s.c}" opacity="0.92" stroke="#451219" stroke-width="1"><title>${s.l} ${s.v}个</title></path>`; ang=a1; });
+  ring0.forEach(s=>{ const a1=ang+s.v/130*360; svg+=`<path d="${annular(cx,cy,26,52,ang,a1)}" fill="${s.c}" opacity="0.92" stroke="#16263F" stroke-width="1"><title>${s.l} ${s.v}个</title></path>`; ang=a1; });
   ang=0; const each=360/ring1.length;
-  ring1.forEach((s,i)=>{ const a1=ang+each; svg+=`<path d="${annular(cx,cy,54,84,ang+1,a1-1)}" fill="${s.c}" opacity="0.8" stroke="#451219" stroke-width="1"><title>党支部 ${i+1}</title></path>`; ang=a1; });
-  svg+=`<circle cx="90" cy="90" r="24" fill="#451219" stroke="#6E1A24"/><text x="90" y="86" text-anchor="middle" fill="#F5E7E8" font-size="11" font-weight="700">组织</text><text x="90" y="100" text-anchor="middle" fill="#F2D873" font-size="13" font-weight="700">386</text>`;
+  ring1.forEach((s,i)=>{ const a1=ang+each; svg+=`<path d="${annular(cx,cy,54,84,ang+1,a1-1)}" fill="${s.c}" opacity="0.8" stroke="#16263F" stroke-width="1"><title>党支部 ${i+1}</title></path>`; ang=a1; });
+  svg+=`<circle cx="90" cy="90" r="24" fill="#16263F" stroke="#243B5C"/><text x="90" y="86" text-anchor="middle" fill="#E6ECF5" font-size="11" font-weight="700">组织</text><text x="90" y="100" text-anchor="middle" fill="#F2D873" font-size="13" font-weight="700">386</text>`;
   document.getElementById('sunburst').innerHTML=svg;
   document.getElementById('sbLegend').innerHTML=ring0.map(s=>`<div class="li"><i style="background:${s.c}"></i><span>${s.l}</span><b>${s.v}</b></div>`).join('');
 }
@@ -528,9 +525,9 @@ function renderBars(id, data, max){
 /* 环形饼图 */
 function renderDonut(svgId, legendId, data){
   const cx=60,cy=60,r=46,C=2*Math.PI*r; let off=0; const total=data.reduce((s,d)=>s+d.v,0);
-  let svg=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#57202A" stroke-width="14"/>`;
+  let svg=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1E324F" stroke-width="14"/>`;
   data.forEach(d=>{ const len=C*d.v/total; svg+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.c}" stroke-width="14" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"><title>${d.l} ${d.v}</title></circle>`; off+=len; });
-  svg+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" fill="#F5E7E8" font-size="13" font-weight="700">${total}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" fill="#9FB0C4" font-size="10">人</text>`;
+  svg+=`<text x="${cx}" y="${cy-2}" text-anchor="middle" fill="#E6ECF5" font-size="13" font-weight="700">${total}</text><text x="${cx}" y="${cy+14}" text-anchor="middle" fill="#9FB0C4" font-size="10">人</text>`;
   document.getElementById(svgId).innerHTML=svg;
   document.getElementById(legendId).innerHTML=data.map(d=>`<div class="li"><i style="background:${d.c}"></i><span>${d.l}</span><b>${d.v}</b></div>`).join('');
 }
@@ -570,7 +567,7 @@ function renderStack(){
 const gauges3=[{l:'学时达标率',v:88.2,c:'#5B9BD9'},{l:'组织生活完成率',v:91.5,c:'#54B37F'},{l:'考核整体进度',v:86.4,c:'#F2D873'}];
 function gaugeSVG(v,c){
   const cx=34,cy=34,r=28,C=2*Math.PI*r,pct=v/100;
-  return `<svg width="68" height="68" viewBox="0 0 68 68"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#57202A" stroke-width="8"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dashoffset 1.2s ease"/></svg>`;
+  return `<svg width="68" height="68" viewBox="0 0 68 68"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1E324F" stroke-width="8"/><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}" transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dashoffset 1.2s ease"/></svg>`;
 }
 function renderGauges3(){
   document.getElementById('gauge3').innerHTML=gauges3.map(g=>`<div class="g3"><div>${gaugeSVG(g.v,g.c)}</div><div class="gv">${g.v}%</div><div class="gl">${g.l}</div></div>`).join('');
