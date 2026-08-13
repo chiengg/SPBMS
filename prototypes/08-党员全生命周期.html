@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>党员全生命周期管理 · 党建管理系统</title>
+<!--
+  页面：08 党员全生命周期管理（PRD 3.2 · PC · 党员全生命周期管理分组主页）
+  设计系统：复用 设计令牌.md 的 :root 变量块；与 02/03/06/07 同构。
+  定位：生命周期枢纽 + 单党员时间轴（用户已确认），并依 PRD 3.2 补齐全部子模块。
+  结构（主区 4 个子标签）：
+    ① 生命周期总览：KPI + 阶段地图(枢纽) + 转化预警 + 全生命周期台账
+    ② 发展党员25节点（3.2.2）：25 节点标准清单(分组+法定公示★+关键规则) + 进度高亮 + 关键自动校验规则 + 拟提交节点校验(通过/拦截)
+    ③ 组织关系转接（3.2.3）：转接台账 + 系统内6节点流程 + 在途/待回执/异常 + 转接前校验 + 发起转接模态
+    ④ 流动党员与党籍异动（3.2.4）：流动党员台账(外出报备/线上参会/失联预警) + 党籍异动台账(独立审批流)
+  详情抽屉 3 个子标签：时间轴 / 党员画像(3.2.1.2 八维度) / 档案变更(3.2.1.1 核心字段变更管控)
+  交互：阶段地图筛选、台账分页、openDetail、advanceStage、disposeMember(扩充异动类型)、发起转接、档案变更留痕、查看明文二次验证。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 480px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+
+/* 外壳 */
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-sub .nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+.role-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--state-blue-bg); color: var(--state-blue-text); font-size: 11px; font-weight: 600; }
+
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+
+/* 子标签（主区） */
+.sub-tabs { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; align-self: flex-start; }
+.sub-tab { height: 32px; padding: 0 16px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: all .12s ease; }
+.sub-tab:hover { color: var(--text-primary); background: var(--bg-page); }
+.sub-tab.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.tab-panel { display: flex; flex-direction: column; gap: var(--card-gap); }
+.tab-panel.hidden { display: none; }
+
+/* 按钮 / tag */
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-primary:disabled { background: var(--state-gray-dot); cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.btn-danger { background: #fff; color: var(--state-red-text); border-color: var(--state-red-bg); } .btn-danger:hover { background: var(--state-red-bg); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); }
+.tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); }
+.tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gold { background: #FCF2DD; color: #9A6B12; }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); gap: 10px; flex-wrap: wrap; }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-5); display: flex; flex-direction: column; gap: 6px; }
+.kpi .lbl { font-size: var(--fs-caption); color: var(--text-secondary); }
+.kpi .num { font-size: var(--fs-flip); font-weight: 700; line-height: 1; font-family: var(--font-num); }
+.kpi .num.red { color: var(--brand-red); } .kpi .num.blue { color: var(--brand-blue); } .kpi .num.green { color: var(--state-green); } .kpi .num.gold { color: var(--brand-gold); }
+.kpi .trend { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+/* 阶段地图 */
+.stage-map { display: flex; align-items: stretch; gap: 0; }
+.stage-node { flex: 1; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4); background: var(--bg-card); cursor: pointer; transition: all .14s ease; position: relative; display: flex; flex-direction: column; gap: 4px; }
+.stage-node:hover { border-color: var(--brand-red); box-shadow: var(--shadow-sm); }
+.stage-node.active { border-color: var(--brand-red); background: #FCE9EB; }
+.stage-node .idx { font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.stage-node .nm { font-size: 13px; font-weight: 600; }
+.stage-node .cnt { font-size: 22px; font-weight: 700; font-family: var(--font-num); }
+.stage-node .ds { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.stage-arrow { display: grid; place-items: center; width: 26px; color: var(--state-gray-dot); flex: none; }
+.branch-row { display: flex; gap: var(--card-gap); margin-top: var(--space-4); }
+.branch-card { flex: 1; border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: var(--space-4); display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all .14s ease; }
+.branch-card:hover { border-color: var(--brand-gold); background: #FCF8EF; }
+.branch-card.active { border-color: var(--brand-gold); background: #FCF8EF; }
+.branch-card .bc-l .t { font-size: 13px; font-weight: 600; }
+.branch-card .bc-l .d { font-size: 11px; color: var(--text-secondary); }
+.branch-card .bc-n { font-size: 20px; font-weight: 700; font-family: var(--font-num); color: var(--brand-gold); }
+
+/* 指标条 */
+.metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.metric { padding: var(--space-4); border-left: 3px solid var(--brand-blue); background: var(--state-blue-bg); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.metric.warn { border-left-color: var(--state-orange); background: var(--state-orange-bg); }
+.metric.risk { border-left-color: var(--brand-red); background: var(--state-red-bg); }
+.metric.ok { border-left-color: var(--state-green); background: var(--state-green-bg); }
+.metric .m-t { font-size: var(--fs-caption); color: var(--text-secondary); }
+.metric .m-v { font-size: 18px; font-weight: 700; font-family: var(--font-num); }
+
+/* 筛选区 */
+.filters { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.filters select, .filters input { height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 10px; font-size: 13px; background: var(--bg-card); color: var(--text-primary); }
+.filters input { min-width: 160px; }
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table.tb { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.tb thead th { text-align: left; padding: 10px var(--space-4); background: var(--bg-page); color: var(--text-secondary); font-weight: 600; font-size: var(--fs-caption); border-bottom: 1px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; }
+table.tb tbody td { padding: 11px var(--space-4); border-bottom: 1px solid var(--border-light); vertical-align: middle; white-space: nowrap; }
+table.tb tbody tr:hover { background: var(--bg-page); }
+.mono { font-family: var(--font-num); }
+.pager { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); font-size: var(--fs-caption); color: var(--text-secondary); }
+.pager .pg-btn { height: 28px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; font-size: 13px; }
+.pager .pg-btn:disabled { color: var(--state-gray-dot); cursor: not-allowed; }
+
+/* 通用 kv */
+.kv-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: var(--fs-body); }
+.kv-row .k { color: var(--text-secondary); min-width: 96px; flex: none; }
+.kv-row .v { color: var(--text-primary); font-weight: 500; }
+.kv-row.col { flex-direction: column; align-items: flex-start; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* 抽屉 */
+.drawer-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.42); display: none; z-index: 300; }
+.drawer-mask.open { display: block; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: var(--aside-width); max-width: 94vw; background: var(--bg-card); box-shadow: var(--shadow-md); transform: translateX(100%); transition: transform .24s ease; z-index: 301; display: flex; flex-direction: column; }
+.drawer-mask.open .drawer { transform: translateX(0); }
+.drawer .dh { height: var(--topbar-height); display: flex; align-items: center; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-color); gap: 10px; }
+.drawer .dh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.drawer .dh .x { width: 32px; height: 32px; border: none; background: transparent; border-radius: var(--radius-md); display: grid; place-items: center; color: var(--text-secondary); }
+.drawer .dh .x:hover { background: var(--bg-page); }
+.drawer .db { flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+
+/* 抽屉内子标签 */
+.drawer-tabs { display: inline-flex; background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; align-self: flex-start; }
+.drawer-tab { height: 30px; padding: 0 14px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.drawer-tab.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.drawer-panel.hidden { display: none; }
+
+/* 人员摘要卡 */
+.profile { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4); background: var(--bg-page); border-radius: var(--radius-md); }
+.profile .pa { width: 48px; height: 48px; border-radius: 50%; background: var(--brand-red); color: #fff; display: grid; place-items: center; font-size: 18px; font-weight: 700; flex: none; }
+.profile .pi .pn { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.profile .pi .po { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+.mask-toggle { font-size: 11px; color: var(--brand-blue); cursor: pointer; border: 1px solid var(--state-blue-bg); background: var(--state-blue-bg); border-radius: var(--radius-pill); padding: 1px 8px; }
+
+/* 时间轴 */
+.timeline { position: relative; padding-left: 22px; }
+.timeline::before { content: ""; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: var(--border-color); }
+.tl-node { position: relative; padding: 0 0 var(--space-5) 0; }
+.tl-node:last-child { padding-bottom: 0; }
+.tl-dot { position: absolute; left: -22px; top: 2px; width: 16px; height: 16px; border-radius: 50%; border: 3px solid var(--bg-card); }
+.tl-dot.apply { background: var(--brand-blue); } .tl-dot.activist { background: var(--brand-gold); } .tl-dot.target { background: #B07CDB; }
+.tl-dot.probationary { background: var(--brand-red); } .tl-dot.full { background: var(--state-green); }
+.tl-dot.reward { background: var(--state-green); } .tl-dot.punish { background: var(--state-red-dot); } .tl-dot.transfer { background: var(--brand-blue); }
+.tl-dot.exit { background: var(--state-gray-dot); } .tl-dot.archive { background: var(--brand-gold); }
+.tl-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.tl-card .tl-h { display: flex; align-items: center; gap: 8px; }
+.tl-card .tl-date { font-size: var(--fs-caption); color: var(--text-secondary); font-family: var(--font-num); }
+.tl-card .tl-title { font-size: var(--fs-body); font-weight: 600; }
+.tl-card .tl-meta { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+.tl-card .tl-note { font-size: var(--fs-caption); color: var(--text-primary); margin-top: 4px; background: var(--bg-page); border-radius: var(--radius-sm); padding: 6px 8px; }
+.tl-card .tl-attach { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--brand-blue); margin-top: 4px; }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.45); display: none; align-items: center; justify-content: center; z-index: 400; padding: var(--space-4); }
+.modal-mask.open { display: flex; }
+.modal { width: 520px; max-width: 100%; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; animation: pop .18s ease; }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal .mh { display: flex; align-items: center; padding: var(--space-5); border-bottom: 1px solid var(--border-light); }
+.modal .mh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.modal .mb { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.modal .mf { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-light); background: var(--bg-page); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 600; }
+.field select, .field textarea, .field input { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 10px; font-size: var(--fs-body); font-family: inherit; background: #fff; color: var(--text-primary); }
+.field textarea { min-height: 72px; resize: vertical; }
+.field select:focus, .field textarea:focus, .field input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.verify-row { display: flex; align-items: flex-start; gap: 8px; background: var(--state-red-bg); border-radius: var(--radius-md); padding: 10px 12px; }
+.verify-row input { margin-top: 3px; width: 16px; height: 16px; flex: none; }
+.verify-row label { font-size: var(--fs-caption); color: var(--state-red-text); line-height: 1.5; }
+.hidden { display: none !important; }
+
+/* 党员画像（3.2.1.2） */
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.pf-card { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4); background: var(--bg-card); }
+.pf-card .pf-l { font-size: var(--fs-caption); color: var(--text-secondary); }
+.pf-card .pf-v { font-size: 18px; font-weight: 700; font-family: var(--font-num); margin-top: 2px; }
+.pf-card .pf-v .u { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-left: 2px; }
+.pf-bar { height: 7px; background: var(--bg-page); border-radius: var(--radius-pill); overflow: hidden; margin-top: 8px; }
+.pf-bar > i { display: block; height: 100%; border-radius: var(--radius-pill); }
+
+/* 发展党员 25 节点（3.2.2） */
+.node-group { margin-bottom: var(--space-5); }
+.node-group .ng-h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.node-group .ng-h .badge { font-size: 11px; font-weight: 600; color: var(--brand-blue); background: var(--state-blue-bg); padding: 1px 8px; border-radius: var(--radius-pill); }
+.node-row { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 6px; font-size: 13px; }
+.node-row .nc-step { width: 40px; flex: none; display: grid; place-items: center; background: var(--bg-page); color: var(--text-secondary); font-weight: 700; font-family: var(--font-num); border-right: 1px solid var(--border-light); }
+.node-row .nc-body { flex: 1; padding: 8px 12px; }
+.node-row .nc-name { font-weight: 600; }
+.node-row .nc-rule { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.node-row .nc-pub { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; font-size: 11px; font-weight: 700; color: var(--brand-red); }
+.node-row .nc-st { width: 96px; flex: none; display: grid; place-items: center; font-size: 12px; border-left: 1px solid var(--border-light); }
+.node-row.done { background: var(--state-green-bg); }
+.node-row.done .nc-st { color: var(--state-green-text); font-weight: 600; }
+.node-row.next .nc-st { color: var(--brand-red); font-weight: 700; }
+.node-row.todo .nc-st { color: var(--text-secondary); }
+.rule-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rule-list li { display: flex; gap: 8px; font-size: 13px; }
+.rule-list li .ri { width: 18px; height: 18px; flex: none; border-radius: 50%; background: var(--brand-red); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; margin-top: 2px; }
+.check-result { margin-top: 12px; border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; }
+.check-result.ok { background: var(--state-green-bg); color: var(--state-green-text); }
+.check-result.block { background: var(--state-red-bg); color: var(--state-red-text); }
+
+/* 转接流程（3.2.3） */
+.flow-steps { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+.flow-step { flex: 1; min-width: 120px; text-align: center; position: relative; }
+.flow-step .fs-dot { width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 6px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--state-gray-dot); position: relative; z-index: 1; }
+.flow-step.done .fs-dot { background: var(--state-green); }
+.flow-step.cur .fs-dot { background: var(--brand-red); box-shadow: 0 0 0 3px rgba(194,31,48,0.18); }
+.flow-step.block .fs-dot { background: var(--state-orange); }
+.flow-step::before { content: ""; position: absolute; top: 13px; left: -50%; width: 100%; height: 2px; background: var(--border-color); z-index: 0; }
+.flow-step:first-child::before { display: none; }
+.flow-step.done::before, .flow-step.cur::before { background: var(--state-green); }
+.flow-step .fs-name { font-size: 12px; font-weight: 600; }
+.flow-step .fs-d { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+/* 弹框内流程：纵向 stepper（消除横向滚动，长节点名可读） */
+.flow-steps.flow-vertical { display: flex; flex-direction: column; gap: 0; overflow-x: visible; overflow-y: auto; max-height: 56vh; padding: 2px 2px 2px 4px; }
+.flow-steps.flow-vertical .flow-step { flex: none; min-width: 0; text-align: left; display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; }
+.flow-steps.flow-vertical .flow-step:last-child { padding-bottom: 2px; }
+.flow-steps.flow-vertical .fs-dot { margin: 0; flex: none; }
+.flow-steps.flow-vertical .fs-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.flow-steps.flow-vertical .fs-name { font-size: 13px; font-weight: 600; white-space: normal; line-height: 1.4; }
+.flow-steps.flow-vertical .fs-d { font-size: 12px; }
+/* 纵向连接线（竖向，贯穿 dot 之间） */
+.flow-steps.flow-vertical .flow-step::before { content: ""; position: absolute; left: 12px; top: 26px; bottom: -9px; width: 2px; background: var(--border-color); z-index: 0; }
+.flow-steps.flow-vertical .flow-step:last-child::before { display: none; }
+.flow-steps.flow-vertical .flow-step.done::before { background: var(--state-green); }
+.warn-banner { display: flex; align-items: center; gap: 10px; background: var(--state-red-bg); color: var(--state-red-text); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; margin-bottom: var(--space-4); }
+.warn-banner svg { width: 18px; height: 18px; flex: none; }
+
+/* 流动党员 / 异动 */
+.alert-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--state-red-bg); background: var(--state-red-bg); border-radius: var(--radius-md); color: var(--state-red-text); font-size: 13px; margin-bottom: var(--space-4); }
+.mini-flow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.mini-flow .mf-node { font-size: 11px; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--state-gray-bg); color: var(--text-secondary); }
+.mini-flow .mf-node.done { background: var(--state-green-bg); color: var(--state-green-text); }
+.mini-flow .mf-node.cur { background: var(--brand-red); color: #fff; }
+.mini-flow .mf-arrow { color: var(--state-gray-dot); }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; transition: all .22s ease; z-index: 500; pointer-events: none; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="logo"><div class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.2 4.8L19 8.3l-3.5 3.4.9 4.9L12 14.6 7.6 16.6l.9-4.9L5 8.3l4.8-.5L12 3z" fill="#fff"/></svg></div><div class="t">智慧党建<small>党建管理系统</small></div></div>
+  <nav class="nav">
+    <!-- 首页 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">首页</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    <!-- 组织架构管理 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <!-- 党员全生命周期管理（本模块分组） -->
+    <div class="nav-group active">
+      <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M15 14.5a4.5 4.5 0 019 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item active" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+      </div>
+    </div>
+    <!-- 关系变动管理（PRD 3.2.3 / 3.2.4：转接、流动与党籍异动，属关系变动而非生命周期） -->
+    <div class="nav-group collapsed" id="grp-relation">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 7h7v10H4zM13 7h7v10h-7M8 12h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 7l-3-3M17 17l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">关系变动管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#movable" onclick="navLeaf(this)">流动党员与党籍异动管理</a>
+      </div>
+    </div>
+    <!-- 组织生活管理 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织生活管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+      </div>
+    </div>
+    <!-- 学习教育 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h7v14H4zM13 5h7v14h-7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <!-- 党费管理 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <!-- 监督考核 -->
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+      </div>
+    </div>
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<!-- ===== 主区 ===== -->
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">党员全生命周期管理 <span>/</span> <b id="crumbActive">党员全生命周期总览</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="topSearch" placeholder="搜索党员姓名 / 组织 / 党员号"></div>
+    <div class="top-actions">
+      <button class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>全部党组织</button>
+      <button class="icon-btn" title="消息"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v10H8l-4 4V6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="dot">3</span></button>
+      <div class="user"><div class="avatar">王</div><div><div class="nm">王*（党委管理员）</div><div class="role">组织部门</div></div></div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>党员全生命周期管理</h1><div class="sub">覆盖「申请入党 → 入党积极分子 → 发展对象 → 预备党员 → 正式党员 → 持续管理 → 转接/异动/退出」的完整链路，全程留痕、可追溯。</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="showToast('已导出党员全生命周期台账（含脱敏）')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>导出台账</button>
+        <button class="btn btn-primary" onclick="openDetail('m1')"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>阶段流转示例</button>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" onclick="switchTab('overview')">生命周期总览</button>
+      <button class="sub-tab" onclick="switchTab('develop')">发展党员25节点</button>
+      <button class="sub-tab" onclick="switchTab('transfer')">组织关系转接</button>
+      <button class="sub-tab" onclick="switchTab('movable')">流动党员与党籍异动</button>
+    </div>
+
+    <!-- ===== 子标签1：生命周期总览 ===== -->
+    <div class="tab-panel" id="panel-overview">
+      <div class="kpis">
+        <div class="kpi"><div class="lbl">党员总数（在册）</div><div class="num blue" id="kpiTotal">685</div><div class="trend">含发展党员阶段 41 人</div></div>
+        <div class="kpi"><div class="lbl">在发展党员阶段</div><div class="num" id="kpiDev">41</div><div class="trend">申请8 / 积极分子15 / 发展对象6 / 预备12</div></div>
+        <div class="kpi"><div class="lbl">本月阶段流转</div><div class="num green">12</div><div class="trend">较上月 +2</div></div>
+        <div class="kpi"><div class="lbl">超期 / 预警</div><div class="num red" id="kpiWarn">5</div><div class="trend">超期未转正2 · 超期转接2 · 材料缺失1</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>生命周期阶段地图</h2><span class="sub-note">点击任一阶段可筛选下方台账</span></div>
+        <div class="card-b">
+          <div class="stage-map" id="stageMap"></div>
+          <div class="branch-row">
+            <div class="branch-card" data-branch="flow" onclick="filterBranch('flow')">
+              <div class="bc-l"><div class="t">流动党员</div><div class="d">正式党员中流动在外</div></div>
+              <div class="bc-n" id="flowCnt">25</div>
+            </div>
+            <div class="branch-card" data-branch="exit" onclick="filterBranch('exit')">
+              <div class="bc-l"><div class="t">退出 / 除名 / 死亡</div><div class="d">历史终止党籍（留痕）</div></div>
+              <div class="bc-n">9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="metric-strip">
+        <div class="metric"><div class="m-t">积极分子确定率（积极分子/申请人）</div><div class="m-v">187.5%</div></div>
+        <div class="metric ok"><div class="m-t">预备党员转正及时率</div><div class="m-v">94.2%</div></div>
+        <div class="metric warn"><div class="m-t">超期未转正预警</div><div class="m-v">2 人</div></div>
+        <div class="metric risk"><div class="m-t">超期未转接 / 材料缺失</div><div class="m-v">3 人</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>党员全生命周期台账</h2><span class="sub-note" id="ledgerCount"></span></div>
+        <div class="card-b">
+          <div class="filters" style="margin-bottom:12px">
+            <select id="fStage"><option value="">全部阶段</option><option value="apply">申请入党</option><option value="activist">入党积极分子</option><option value="target">发展对象</option><option value="probationary">预备党员</option><option value="full">正式党员</option><option value="flow">流动党员</option><option value="exit">退出/除名/死亡</option></select>
+            <select id="fStatus"><option value="">全部党籍状态</option><option value="正常">正常</option><option value="预警">预警</option><option value="异常">异常（处置中）</option><option value="终止">已终止</option></select>
+            <select id="fOrg"><option value="">全部党组织</option></select>
+            <input id="fKw" placeholder="姓名 / 党员号 / 关键字">
+            <button class="btn btn-secondary" onclick="resetFilters()">重置</button>
+          </div>
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>姓名</th><th>党员号</th><th>所属组织</th><th>当前阶段</th><th>党籍状态</th><th>申请/入党时间</th><th>党龄</th><th>关键里程碑</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="ledgerBody"></tbody>
+            </table>
+          </div>
+          <div class="pager"><span id="pgInfo"></span><span style="margin-left:auto;display:flex;gap:8px"><button class="pg-btn" id="pgPrev" onclick="turnPage(-1)">上一页</button><button class="pg-btn" id="pgNext" onclick="turnPage(1)">下一页</button></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 子标签2：发展党员25节点（3.2.2） ===== -->
+    <div class="tab-panel hidden" id="panel-develop">
+      <div class="card">
+        <div class="card-h"><h2>发展党员 25 节点标准清单</h2>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span class="sub-note">选择发展对象查看进度</span>
+            <select id="devPick" onchange="renderDevNodes()"></select>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="sub-note" style="margin-bottom:12px">严格遵循《中国共产党发展党员工作细则》25 个节点，全流程线上管控、自动校验、材料归档。标注 <b style="color:var(--brand-red)">★ 法定公示</b> 的节点须公示≥5个工作日，异议未结案不得进入下一环节。</div>
+          <div id="devNodes"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>关键自动校验规则（异常即拦截）</h2></div>
+        <div class="card-b">
+          <ul class="rule-list">
+            <li><span class="ri">1</span><div>年龄校验：入党申请人须年满 18 周岁，系统自动校验出生日期。</div></li>
+            <li><span class="ri">2</span><div>培养考察满 12 个月方可列为发展对象，不足自动拦截（节点 10）。</div></li>
+            <li><span class="ri">3</span><div>政治审查不合格者禁止进入下一环节；短期集中培训≥3天/24学时，未培训不得发展（节点 15、16）。</div></li>
+            <li><span class="ri">4</span><div>接收预备党员：到会有表决权正式党员半数以上方可开会，赞成票超应到会半数方可通过（节点 21）。</div></li>
+            <li><span class="ri">5</span><div>党委审批须在 3 个月内完成，超时自动提醒（节点 23）。</div></li>
+            <li><span class="ri">6</span><div>预备期为 1 年，提前/延期转正需审批，延期最长不超过 1 年（节点 24、25）。</div></li>
+          </ul>
+          <div id="devCheck" class="check-result ok"></div>
+          <div style="margin-top:12px"><button class="btn btn-primary" onclick="runNodeCheck()">校验「该同志」拟提交下一节点</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 子标签3：组织关系转接（3.2.3） ===== -->
+    <div class="tab-panel hidden" id="panel-transfer">
+      <div class="card">
+        <div class="card-h"><h2>组织关系转接台账</h2>
+          <button class="btn btn-primary btn-sm" onclick="openTransfer()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>发起转接</button>
+        </div>
+        <div class="card-b">
+          <div id="transferWarn"></div>
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>党员</th><th>转出组织</th><th>转入组织</th><th>类型</th><th>转接原因</th><th>发起时间</th><th>状态</th><th>电子回执号</th><th>回执时效</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="transferBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>组织关系转接标准流程（7 节点）</h2><span class="sub-note">跨省/跨系统对接全国党员管理信息系统</span></div>
+        <div class="card-b">
+          <div class="sub-note" style="margin-bottom:14px">流程：党员发起 → 转出支部审核 → 转出上级党委审批 → 转入上级党委审核 → 转入支部接收 → 电子回执确认 → <b>档案自动迁移</b>。跨省转接在「电子回执确认」前插入「生成全国统一电子介绍信（电子签章）」并对接全国系统。回执时效 5 个工作日，超时自动升级督办、支持线下回执补录；转接前校验欠缴党费、未办结处分（禁止发起）。</div>
+          <div class="flow-steps" id="transferFlow"></div>
+          <div class="sub-note" style="margin-top:14px"><b>在途状态</b>（PRD 补充）：转接发起至转入方接收确认前，党员 <b>party_status</b> 置为「转接在途」，期间不计入转出/转入任一方完整统计口径（避免双重归属/漏计）；在途期间党费仍由原组织收缴、组织生活仍参加原组织，回执确认后状态自动切回「正常」并归属新组织。跨省对接失败/被驳回进入「转接异常」，由原转出组织重新发起或终止，全程留痕。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 子标签4：流动党员与党籍异动（3.2.4） ===== -->
+    <div class="tab-panel hidden" id="panel-movable">
+      <div class="card">
+        <div class="card-h"><h2>流动党员管理</h2><span class="sub-note">外出报备 · 线上参会 · 季度联系提醒 · 连续6个月失联预警</span></div>
+        <div class="card-b">
+          <div id="movableWarn"></div>
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>姓名</th><th>外出地点</th><th>所属组织</th><th>最近联系</th><th>下次联系</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="movableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>党籍异动台账</h2><span class="sub-note">停止党籍 / 恢复党籍 / 劝退 / 除名 / 开除党籍 / 死亡注销 · 独立审批流 + 永久归档</span></div>
+        <div class="card-b">
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>党员</th><th>异动类型</th><th>办理日期</th><th>事实依据</th><th>审批状态</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="alterBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 单党员详情抽屉 ===== -->
+<div class="drawer-mask" id="drawer-detail" onclick="if(event.target===this)closeDrawer('drawer-detail')">
+  <div class="drawer">
+    <div class="dh"><h3 id="detTitle">党员全生命周期</h3><button class="x" onclick="closeDrawer('drawer-detail')"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="db">
+      <div class="profile" id="detProfile"></div>
+      <div class="drawer-tabs">
+        <button class="drawer-tab active" onclick="switchDrawerTab('tl')">时间轴</button>
+        <button class="drawer-tab" onclick="switchDrawerTab('pf')">党员画像</button>
+        <button class="drawer-tab" onclick="switchDrawerTab('arc')">档案变更</button>
+      </div>
+      <!-- 时间轴 -->
+      <div class="drawer-panel" id="dp-tl">
+        <div class="card" style="border:none;box-shadow:none;background:transparent;padding:0">
+          <div class="card-h" style="padding-left:0;padding-right:0"><h2>全生命周期事件时间轴</h2></div>
+          <div class="timeline" id="detTimeline"></div>
+        </div>
+      </div>
+      <!-- 党员画像 -->
+      <div class="drawer-panel hidden" id="dp-pf">
+        <div class="card" style="border:none;box-shadow:none;background:transparent;padding:0">
+          <div class="card-h" style="padding-left:0;padding-right:0"><h2>党员画像（综合视图）</h2></div>
+          <div class="pf-grid" id="detPortrait"></div>
+        </div>
+      </div>
+      <!-- 档案变更 -->
+      <div class="drawer-panel hidden" id="dp-arc">
+        <div class="card" style="border:none;box-shadow:none;background:transparent;padding:0">
+          <div class="card-h" style="padding-left:0;padding-right:0"><h2>档案信息变更（核心字段管控）</h2></div>
+          <div id="detArchive"></div>
+        </div>
+      </div>
+      <div id="detActions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 处置 / 异动 模态 ===== -->
+<div class="modal-mask" id="modal-dispose">
+  <div class="modal">
+    <div class="mh"><h3>党籍处置 / 异动登记</h3><button class="x" onclick="closeModal('modal-dispose')" style="border:none;background:transparent;cursor:pointer"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="mb">
+      <div class="field"><label>处置 / 异动类型</label><select id="dpType">
+        <optgroup label="纪律处分"><option>警告</option><option>严重警告</option><option>撤销党内职务</option><option>留党察看</option><option>开除党籍</option></optgroup>
+        <optgroup label="党籍异动"><option>停止党籍</option><option>恢复党籍</option><option>劝退</option><option>除名（脱党/不合格）</option></optgroup>
+        <optgroup label="退出党籍"><option>自愿退党</option><option>死亡</option></optgroup>
+      </select></div>
+      <div class="field"><label>原因说明（必填，留痕归档）</label><textarea id="dpReason" placeholder="请填写处置/异动的事实依据与审批结论…"></textarea></div>
+      <div class="verify-row"><input type="checkbox" id="dpVerify"><label for="dpVerify">我已确认该操作将写入党员档案并同步至审计日志，且已通过相应审批流程（二次验证）。</label></div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('modal-dispose')">取消</button><button class="btn btn-danger" id="dpConfirm" onclick="confirmDispose()" disabled>确认登记</button></div>
+  </div>
+</div>
+
+<!-- ===== 发起转接 模态 ===== -->
+<div class="modal-mask" id="modal-transfer">
+  <div class="modal">
+    <div class="mh"><h3>发起组织关系转接</h3><button class="x" onclick="closeModal('modal-transfer')" style="border:none;background:transparent;cursor:pointer"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <div class="mb">
+      <div class="field"><label>转出党员</label><input id="tfMember" disabled style="background:var(--bg-page)"></div>
+      <div class="field"><label>转出组织</label><input id="tfFrom" disabled style="background:var(--bg-page)"></div>
+      <div class="field"><label>转入组织</label><select id="tfTo"><option>第三党支部</option><option>第四党支部</option><option>流入地党支部（异地）</option><option>机关党总支</option></select></div>
+      <div class="field"><label>转接类型</label><select id="tfType"><option value="internal">系统内转接（省内/本单位）</option><option value="cross">跨省 / 跨系统转接（全国系统）</option></select></div>
+      <div class="field"><label>转接原因（必填）</label><select id="tfReason"><option>工作调动</option><option>毕业</option><option>退伍</option><option>居住地变更</option><option>外出务工 / 经商</option></select></div>
+      <div id="tfCheck" class="sub-note"></div>
+      <div class="verify-row"><input type="checkbox" id="tfVerify"><label for="tfVerify">本人确认转接信息无误，转入支部将在 5 个工作日内确认接收；在途期间党费仍由原组织收缴。</label></div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('modal-transfer')">取消</button><button class="btn btn-primary" id="tfConfirm" onclick="submitTransfer()" disabled>提交转接申请</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 导航 ===== */
+function toggleNavGroup(el){ var g = el.closest('.nav-group'); if(g) g.classList.toggle('collapsed'); }
+function navLeaf(el){ if(!el) return; document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){ n.classList.remove('active'); }); el.classList.add('active'); var sub=el.closest('.nav-sub'); if(sub){ var grp=sub.closest('.nav-group'); if(grp){ grp.classList.remove('collapsed'); var t=grp.querySelector('.nav-group-title'); if(t) t.classList.add('active'); } } }
+/* 同步左侧栏子项 active（修复：switchTab 不更新侧栏高亮） */
+function syncNavActive(key){
+  document.querySelectorAll('.nav-group').forEach(function(g){ g.classList.add('collapsed'); });
+  document.querySelectorAll('.nav-group-title').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){
+    var match=false;
+    if(key==='overview') match = n.textContent.indexOf('总览')>=0;
+    else if(key==='develop') match = n.textContent.indexOf('发展党员25节点')>=0;
+    else if(key==='transfer') match = n.textContent.indexOf('组织关系转接')>=0;
+    else if(key==='movable') match = n.textContent.indexOf('流动党员与党籍异动')>=0;
+    n.classList.toggle('active', match);
+    if(match){ var grp=n.closest('.nav-group'); if(grp){ grp.classList.remove('collapsed'); var t=grp.querySelector('.nav-group-title'); if(t) t.classList.add('active'); } }
+  });
+}
+
+/* ===== 通用 ===== */
+function nowStr08(){ var d=new Date(); var p=function(n){return ('0'+n).slice(-2);}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); }, 2200); }
+function openDrawer(id){ document.getElementById(id).classList.add('open'); }
+function closeDrawer(id){ document.getElementById(id).classList.remove('open'); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function statusTag(s){ var m={ '正常':['green','正常'], '预警':['orange','预警'], '异常':['red','异常·处置中'], '终止':['gray','已终止'] }; var v=m[s]||['gray',s]; return '<span class="tag '+v[0]+'">'+v[1]+'</span>'; }
+function stageTag(stage){
+  var m={ apply:['blue','申请入党'], activist:['blue','入党积极分子'], target:['gray','发展对象'], probationary:['red','预备党员'], full:['green','正式党员'], flow:['gold','流动党员'], exit:['gray','退出/除名'] };
+  var v=m[stage]||['gray',stage]; return '<span class="tag '+v[0]+'">'+v[1]+'</span>';
+}
+function kv(k,v){ return '<div class="kv-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+function plusMonths(dateStr, n){ var p=dateStr.split('-'); var y=+p[0], m=+p[1]-1, d=+p[2]; var dt=new Date(y,m,d); dt.setMonth(dt.getMonth()+n); var pp=function(x){return ('0'+x).slice(-2);}; return dt.getFullYear()+'-'+pp(dt.getMonth()+1)+'-'+pp(dt.getDate()); }
+
+/* ===== 主区子标签切换 ===== */
+var TAB_CRUMB = { overview:'党员全生命周期总览', develop:'发展党员25节点', transfer:'组织关系转接', movable:'流动党员与党籍异动' };
+function switchTab(key){
+  ['overview','develop','transfer','movable'].forEach(function(k){ document.getElementById('panel-'+k).classList.toggle('hidden', k!==key); });
+  document.querySelectorAll('.sub-tab').forEach(function(b){ b.classList.toggle('active', b.textContent.indexOf(TAB_CRUMB[key])>=0 || (key==='overview'&&b.textContent.indexOf('总览')>=0)); });
+  document.getElementById('crumbActive').textContent = TAB_CRUMB[key];
+  syncNavActive(key);
+  if(location.hash!=='#'+key) { try{ history.replaceState(null,'','#'+key); }catch(e){} }
+}
+function activateTabFromHash(){
+  var h=(location.hash||'').replace('#','');
+  if(['overview','develop','transfer','movable'].indexOf(h)>=0) switchTab(h);
+}
+
+/* ===== 数据：阶段地图 ===== */
+var STAGES = [
+  {key:'apply', label:'申请入党', count:8, desc:'递交申请书，党组织收到并登记'},
+  {key:'activist', label:'入党积极分子', count:15, desc:'支部委员会研究决定，报上级党委备案'},
+  {key:'target', label:'发展对象', count:6, desc:'经一年以上培养考察，支委会研究确定'},
+  {key:'probationary', label:'预备党员', count:12, desc:'支部大会表决通过，党委审批接收'},
+  {key:'full', label:'正式党员', count:642, desc:'预备期满转正，进入持续管理'}
+];
+var BRANCH = { flow:25, exit:9 };
+var CUR_FILTER = { stage:'', branch:'' };
+
+function renderStageMap(){
+  var h='';
+  STAGES.forEach(function(s,i){
+    h+='<div class="stage-node'+(CUR_FILTER.stage===s.key?' active':'')+'" onclick="filterStage(\''+s.key+'\')">'+
+       '<div class="idx">阶段 '+(i+1)+'</div><div class="nm">'+s.label+'</div>'+
+       '<div class="cnt">'+s.count+'</div><div class="ds">'+s.desc+'</div></div>';
+    if(i<STAGES.length-1) h+='<div class="stage-arrow">→</div>';
+  });
+  document.getElementById('stageMap').innerHTML=h;
+  var fc=document.getElementById('flowCnt'); if(fc) fc.textContent=BRANCH.flow;
+}
+
+/* ===== 数据：党员枚举（覆盖各阶段，含画像与异动标记） ===== */
+var MEMBERS = [
+  { id:'m1', name:'张伟', no:'P2020-0011', org:'第一党支部', stage:'full', status:'正常', apply:'2018-03-12', join:'2020-03-12', age:'6年', idcard:'3201**********0035', mobile:'138****6621',
+    extra:[ {d:'2022-06-15', t:'reward', title:'获评“优秀共产党员”', org:'机关党委', note:'2021年度民主评议优秀，予以表彰', attach:true},
+      {d:'2023-09-01', t:'transfer', title:'组织关系转入（市内）', org:'第一党支部', note:'由第二党支部转入，转接在途2天正常接收'},
+      {d:'2024-12-20', t:'reward', title:'参加主题教育集中学习', org:'第一党支部', note:'完成32学时，心得1篇'} ],
+    pf:{ orgLife:98, study:100, fee:'正常（缴至当月）', score:168, scoreRank:12, rewards:2, volunteer:48 } },
+  { id:'m2', name:'李娜', no:'P2021-0042', org:'流动党员（外出务工）', stage:'flow', status:'正常', apply:'2019-05-20', join:'2021-05-20', age:'5年', idcard:'3201**********1527', mobile:'139****3380',
+    extra:[ {d:'2023-02-10', t:'transfer', title:'组织关系转至流入地（异地）', org:'流入地党支部', note:'流动党员，定期线上参加组织生活'},
+      {d:'2024-08-01', t:'reward', title:'线上学习达标', org:'原支部', note:'年度学时达标，党费线上缴纳'} ],
+    flowInfo:{ loc:'上海（务工）', last:'2026-07-28', next:'2026-08-28' },
+    pf:{ orgLife:92, study:100, fee:'正常（线上）', score:120, scoreRank:90, rewards:0, volunteer:16 } },
+  { id:'m3', name:'王芳', no:'P2024-0108', org:'第二党支部', stage:'probationary', status:'预警', apply:'2023-02-18', join:'—', age:'预备期', idcard:'3201**********2241', mobile:'137****1190',
+    extra:[ {d:'2025-08-18', t:'probationary', title:'接收为预备党员（预警）', org:'第二党支部', note:'预备期将满一年，请于 2026-08-18 前办理转正'} ],
+    pf:{ orgLife:95, study:90, fee:'正常', score:35, scoreRank:512, rewards:0, volunteer:4 } },
+  { id:'m4', name:'赵强', no:'P2024-0215', org:'第三党支部', stage:'target', status:'正常', apply:'2022-11-05', join:'—', age:'发展对象', idcard:'3201**********3318', mobile:'136****7742',
+    extra:[], politic:true, trained:false,
+    pf:{ orgLife:90, study:85, fee:'正常', score:22, scoreRank:560, rewards:0, volunteer:2 } },
+  { id:'m5', name:'陈静', no:'P2024-0302', org:'机关党支部', stage:'activist', status:'正常', apply:'2024-01-09', join:'—', age:'积极分子', idcard:'3201**********4409', mobile:'135****2256',
+    extra:[], politic:true, trained:true,
+    pf:{ orgLife:88, study:80, fee:'正常', score:15, scoreRank:600, rewards:0, volunteer:1 } },
+  { id:'m6', name:'刘洋', no:'P2025-0401', org:'生产党支部', stage:'apply', status:'正常', apply:'2025-10-22', join:'—', age:'申请人', idcard:'3201**********5512', mobile:'133****8831',
+    extra:[], feeDue:true,
+    pf:null },
+  { id:'m7', name:'孙磊', no:'P2019-0076', org:'检修党支部', stage:'full', status:'异常', apply:'2017-06-30', join:'2019-06-30', age:'7年', idcard:'3201**********6603', mobile:'138****4410',
+    extra:[ {d:'2025-11-03', t:'punish', title:'受到党内警告处分', org:'检修党支部', note:'因迟到早退被诫勉，影响期一年', attach:true} ],
+    pf:{ orgLife:70, study:80, fee:'正常', score:58, scoreRank:401, rewards:1, volunteer:10 } },
+  { id:'m8', name:'周敏', no:'P2022-0155', org:'后勤党支部', stage:'full', status:'正常', apply:'2020-09-14', join:'2022-09-14', age:'4年', idcard:'3201**********7715', mobile:'139****9023',
+    extra:[ {d:'2024-03-08', t:'reward', title:'参与疫情防控志愿服务', org:'后勤党支部', note:'累计服务60小时，记实积分'} ],
+    pf:{ orgLife:96, study:95, fee:'正常', score:142, scoreRank:40, rewards:1, volunteer:60 } },
+  { id:'m9', name:'吴昊', no:'P2024-0099', org:'运输党支部', stage:'probationary', status:'正常', apply:'2023-04-02', join:'—', age:'预备期', idcard:'3201**********8826', mobile:'137****5518',
+    extra:[],
+    pf:{ orgLife:93, study:88, fee:'正常', score:30, scoreRank:500, rewards:0, volunteer:3 } },
+  { id:'m10', name:'郑爽', no:'P2024-0251', org:'销售党支部', stage:'target', status:'正常', apply:'2022-12-19', join:'—', age:'发展对象', idcard:'3201**********9937', mobile:'135****3344',
+    extra:[], politic:true, trained:true,
+    pf:{ orgLife:91, study:86, fee:'正常', score:24, scoreRank:545, rewards:0, volunteer:2 } },
+  { id:'m11', name:'黄涛', no:'P2016-0022', org:'原质检党支部', stage:'exit', status:'终止', apply:'2014-07-08', join:'2016-07-08', age:'—', idcard:'3201**********1148', mobile:'138****6677',
+    extra:[ {d:'2025-04-15', t:'exit', title:'予以除名', org:'原质检党支部', note:'连续6个月无故不参加组织生活、不缴纳党费，按自行脱党予以除名', attach:true} ],
+    pf:null },
+  { id:'m12', name:'马超', no:'P2005-0009', org:'财务党支部', stage:'full', status:'正常', apply:'2003-05-10', join:'2005-05-10', age:'21年', idcard:'3201**********2259', mobile:'139****1198',
+    extra:[ {d:'2023-07-01', t:'reward', title:'光荣在党20年纪念', org:'财务党支部', note:'颁发纪念章，记入档案'} ],
+    pf:{ orgLife:99, study:100, fee:'正常', score:175, scoreRank:8, rewards:1, volunteer:72 } },
+  { id:'m13', name:'林峰', no:'P2023-0173', org:'流动党员（外出务工）', stage:'flow', status:'正常', apply:'2020-11-02', join:'2022-11-02', age:'4年', idcard:'3201**********3367', mobile:'137****2210',
+    extra:[],
+    flowInfo:{ loc:'广东深圳（务工）', last:'2026-08-01', next:'2026-09-01' },
+    pf:{ orgLife:90, study:96, fee:'正常（线上）', score:96, scoreRank:150, rewards:0, volunteer:12 } },
+  { id:'m14', name:'何静', no:'P2021-0209', org:'流动党员（经商）', stage:'flow', status:'预警', apply:'2019-08-15', join:'2021-08-15', age:'5年', idcard:'3201**********4478', mobile:'139****5567',
+    extra:[],
+    flowInfo:{ loc:'浙江杭州（经商）', last:'2026-02-10', next:'2026-08-10' },
+    pf:{ orgLife:78, study:82, fee:'欠缴1个月', score:64, scoreRank:380, rewards:0, volunteer:5 } }
+];
+
+/* 生成标准发展链路事件（至当前阶段） */
+function pipelineEvents(m){
+  var ev=[];
+  ev.push({d:m.apply, t:'apply', title:'递交入党申请书', org:m.org, note:'向党支部递交书面入党申请，党组织登记'});
+  if(m.stage!=='apply') ev.push({d:plusMonths(m.apply,1), t:'activist', title:'确定为入党积极分子', org:m.org, note:'支部委员会研究决定，报上级党委备案', attach:true});
+  if(['target','probationary','full'].indexOf(m.stage)>=0) ev.push({d:plusMonths(m.apply,13), t:'target', title:'确定为发展对象', org:m.org, note:'经一年以上培养考察，支委会研究确定'});
+  if(['probationary','full'].indexOf(m.stage)>=0) ev.push({d:plusMonths(m.apply,16), t:'probationary', title:'接收为预备党员', org:m.org, note:'支部大会表决通过，党委审批接收', attach:true});
+  if(m.stage==='full') ev.push({d:m.join, t:'full', title:'转为正式党员', org:m.org, note:'预备期满，支部大会讨论通过转正', attach:true});
+  return ev;
+}
+function buildEvents(m){ return pipelineEvents(m).concat(m.extra||[]); }
+
+/* ===== 台账 ===== */
+var LEDGER_PAGE=1, PAGE_SIZE=20;
+function getFiltered(){
+  var fs=document.getElementById('fStage').value;
+  var fst=document.getElementById('fStatus').value;
+  var fk=(document.getElementById('fKw').value||'').trim();
+  return MEMBERS.filter(function(m){
+    if(CUR_FILTER.stage && m.stage!==CUR_FILTER.stage) return false;
+    if(CUR_FILTER.branch==='flow' && m.stage!=='flow') return false;
+    if(CUR_FILTER.branch==='exit' && m.stage!=='exit') return false;
+    if(fs && m.stage!==fs) return false;
+    if(fst && m.status!==fst) return false;
+    if(fk){ var hay=(m.name+m.no+m.org+(m.extra||[]).map(function(e){return e.title;}).join('')); if(hay.indexOf(fk)<0) return false; }
+    return true;
+  });
+}
+function renderLedger(){
+  var list=getFiltered();
+  var total=list.length;
+  var pages=Math.max(1, Math.ceil(total/PAGE_SIZE));
+  if(LEDGER_PAGE>pages) LEDGER_PAGE=pages;
+  var slice=list.slice((LEDGER_PAGE-1)*PAGE_SIZE, LEDGER_PAGE*PAGE_SIZE);
+  var h='';
+  if(slice.length===0){ h='<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:28px">无匹配数据</td></tr>'; }
+  slice.forEach(function(m){
+    var milestone = m.stage==='exit' ? '已终止' : (m.stage==='full'||m.stage==='flow' ? (m.extra&&m.extra.length?m.extra[0].title:'持续管理中') : (m.stage==='probationary'?'待转正':(m.stage==='target'?'待接收':(m.stage==='activist'?'培养考察中':'申请待受理'))));
+    h+='<tr><td>'+m.name+'</td><td class="mono">'+m.no+'</td><td>'+m.org+'</td><td>'+stageTag(m.stage)+'</td><td>'+statusTag(m.status)+'</td>'+
+       '<td class="mono">'+(m.stage==='apply'||m.stage==='activist'||m.stage==='target'?m.apply:m.join)+'</td>'+
+       '<td>'+m.age+'</td><td>'+milestone+'</td>'+
+       '<td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="openDetail(\''+m.id+'\')">查看</button></td></tr>';
+  });
+  document.getElementById('ledgerBody').innerHTML=h;
+  document.getElementById('ledgerCount').textContent='共 '+total+' 名';
+  document.getElementById('pgInfo').textContent='第 '+LEDGER_PAGE+' / '+pages+' 页';
+  document.getElementById('pgPrev').disabled = LEDGER_PAGE<=1;
+  document.getElementById('pgNext').disabled = LEDGER_PAGE>=pages;
+}
+function turnPage(d){ LEDGER_PAGE+=d; renderLedger(); }
+function resetFilters(){ CUR_FILTER={stage:'',branch:''}; document.getElementById('fStage').value=''; document.getElementById('fStatus').value=''; document.getElementById('fKw').value=''; document.getElementById('fOrg').value=''; document.querySelectorAll('.branch-card').forEach(function(c){ c.classList.remove('active'); }); renderStageMap(); renderLedger(); }
+function filterStage(key){ CUR_FILTER={stage:key,branch:''}; CUR_FILTER.stage=key; document.querySelectorAll('.branch-card').forEach(function(c){ c.classList.remove('active'); }); renderStageMap(); renderLedger(); }
+function filterBranch(b){ CUR_FILTER={stage:'',branch:b}; document.querySelectorAll('.branch-card').forEach(function(c){ c.classList.toggle('active', c.dataset.branch===b); }); renderStageMap(); renderLedger(); }
+['fStage','fStatus','fKw'].forEach(function(id){ var el=document.getElementById(id); if(el) el.addEventListener('input', function(){ LEDGER_PAGE=1; renderLedger(); }); if(el) el.addEventListener('change', function(){ LEDGER_PAGE=1; renderLedger(); }); });
+
+/* ===== 发展党员 25 节点（3.2.2） ===== */
+var DEV_GROUPS = [
+  { name:'一、申请入党', nodes:[
+    {step:1, name:'递交入党申请书', rule:'本人自愿书面申请'},
+    {step:2, name:'党组织1个月内派人谈话', rule:'超时自动提醒'}
+  ]},
+  { name:'二、入党积极分子', nodes:[
+    {step:3, name:'党员推荐/群团组织推优', rule:'确定人选'},
+    {step:4, name:'支委会研究确定入党积极分子', rule:'需支委会/支部大会决议'},
+    {step:5, name:'上级党委备案', rule:'备案后生效'},
+    {step:6, name:'指定2名培养联系人', rule:'明确培养责任'},
+    {step:7, name:'入党积极分子公示', rule:'≥5个工作日，异议归档', pub:true},
+    {step:8, name:'每季度思想汇报、培养人考察', rule:'系统自动提醒'},
+    {step:9, name:'支部每半年考察', rule:'形成考察意见'},
+    {step:10, name:'培养考察满12个月', rule:'不足自动拦截'}
+  ]},
+  { name:'三、发展对象', nodes:[
+    {step:11, name:'听取党小组/培养人/党员群众意见', rule:'—'},
+    {step:12, name:'支委会讨论确定发展对象', rule:'—'},
+    {step:13, name:'上级党委备案', rule:'—'},
+    {step:14, name:'发展对象公示', rule:'≥5个工作日', pub:true},
+    {step:15, name:'政治审查（含政审材料）', rule:'不合格禁入下一环节'},
+    {step:16, name:'短期集中培训≥3天/24学时', rule:'未培训不得发展'}
+  ]},
+  { name:'四、接收预备党员', nodes:[
+    {step:17, name:'支部委员会审查', rule:'—'},
+    {step:18, name:'上级党委预审', rule:'—'},
+    {step:19, name:'接收预备党员前公示', rule:'≥5个工作日', pub:true},
+    {step:20, name:'确定2名入党介绍人、填写《入党志愿书》', rule:'—'},
+    {step:21, name:'支部大会讨论表决', rule:'到会半数以上、赞成超半数'},
+    {step:22, name:'上级党委派人谈话', rule:'—'},
+    {step:23, name:'党委审批（3个月内）', rule:'超时提醒'}
+  ]},
+  { name:'五、转正', nodes:[
+    {step:24, name:'编入支部/党小组、入党宣誓、预备期考察（每季度汇报）', rule:'预备期1年'},
+    {step:25, name:'提交转正申请→转正前公示→支部大会表决→上级党委审批→材料归档', rule:'提前/延期需审批；转正前公示★', pub:true}
+  ]}
+];
+var DEV_DONE = { apply:1, activist:10, target:16, probationary:23, full:25 };
+function devPickOptions(){
+  var sel=document.getElementById('devPick'); if(!sel) return;
+  sel.innerHTML='';
+  MEMBERS.filter(function(m){ return ['apply','activist','target','probationary','full'].indexOf(m.stage)>=0; }).forEach(function(m){
+    var op=document.createElement('option'); op.value=m.id; op.textContent=m.name+'（'+stageTag(m.stage).replace(/<[^>]+>/g,'')+'）'; sel.appendChild(op);
+  });
+}
+function renderDevNodes(){
+  var sel=document.getElementById('devPick'); if(!sel) return;
+  var m=MEMBERS.find(function(x){return x.id===sel.value;}) || MEMBERS[0];
+  var doneN = DEV_DONE[m.stage] || 0;
+  var h='';
+  DEV_GROUPS.forEach(function(g){
+    h+='<div class="node-group"><div class="ng-h">'+g.name+'<span class="badge">'+g.nodes.length+' 节点</span></div>';
+    g.nodes.forEach(function(n){
+      var cls = n.step<=doneN ? 'done' : (n.step===doneN+1 ? 'next' : 'todo');
+      var st = n.step<doneN ? '已完成' : (n.step===doneN ? '当前' : (n.step===doneN+1 ? '下一节点' : '待办'));
+      h+='<div class="node-row '+cls+'">'+
+        '<div class="nc-step">'+n.step+'</div>'+
+        '<div class="nc-body"><div class="nc-name">'+n.name+(n.pub?'<span class="nc-pub">★ 法定公示</span>':'')+'</div><div class="nc-rule">关键规则：'+n.rule+'</div></div>'+
+        '<div class="nc-st">'+st+'</div></div>';
+    });
+    h+='</div>';
+  });
+  document.getElementById('devNodes').innerHTML=h;
+}
+function runNodeCheck(){
+  var sel=document.getElementById('devPick'); if(!sel) return;
+  var m=MEMBERS.find(function(x){return x.id===sel.value;}) || MEMBERS[0];
+  var r=validateNextNode(m);
+  var box=document.getElementById('devCheck');
+  box.className='check-result '+(r.ok?'ok':'block');
+  box.innerHTML=(r.ok?'✓ 校验通过：':'✕ 校验未通过（提交置灰）：')+' '+r.msg;
+}
+function validateNextNode(m){
+  var today=nowStr08();
+  if(m.stage==='apply') return {ok:true, msg:'下一节点「党组织1个月内派人谈话」：仅超时提醒，可提交。'};
+  if(m.stage==='activist'){
+    if(plusMonths(m.apply,12) > today) return {ok:false, msg:'培养考察未满12个月（节点10），无法进入发展对象环节，系统自动拦截。'};
+    return {ok:true, msg:'培养考察满12个月，可提交「入党积极分子公示」（节点7，≥5个工作日）。'};
+  }
+  if(m.stage==='target'){
+    if(!m.politic) return {ok:false, msg:'政治审查材料缺失（节点15），禁止进入下一环节。'};
+    if(!m.trained) return {ok:false, msg:'短期集中培训未达≥3天/24学时（节点16），不得发展。'};
+    return {ok:true, msg:'政审合格、培训达标，可提交「接收预备党员前公示」（节点19）。'};
+  }
+  if(m.stage==='probationary') return {ok:true, msg:'预备期考察中，可提交「转正前公示」（节点25，★法定公示）。'};
+  if(m.stage==='full') return {ok:true, msg:'已是正式党员，发展党员流程全部完成（25/25 节点）。'};
+  return {ok:false, msg:'当前阶段无后续发展节点。'};
+}
+
+/* ===== 组织关系转接（3.2.3） ===== */
+/* PRD 3.2.3 标准流程 7 节点（含末节点"档案自动迁移"）；跨省在节点5前插入"生成全国统一电子介绍信（电子签章）" */
+var TRANSFER_FLOW = ['党员发起','转出支部审核','转出上级党委审批','转入上级党委审核','转入支部接收','电子回执确认','档案自动迁移'];
+var TRANSFER_FLOW_CROSS = ['党员发起','转出支部审核','转出上级党委审批','转入上级党委审核','转入支部接收','生成全国统一电子介绍信（电子签章）','对接全国系统推送','电子回执确认','档案自动迁移'];
+/* 流程节点进度映射（基于实例当前节点 cur，异常/已终止时无效） */
+function flowStepByCur(cur, type){
+  if(type==='cross'){
+    // 跨省：cur 映射到 CROSS 流程 index
+    var map=[0,1,2,3,4,5,6,7,8]; // 与 CROSS 顺序一致
+    return map[Math.min(cur,8)];
+  }
+  return Math.min(cur,6);
+}
+function renderTransferFlowStatic(type){
+  var flow = type==='cross'?TRANSFER_FLOW_CROSS:TRANSFER_FLOW;
+  var h='';
+  flow.forEach(function(name,i){
+    h+='<div class="flow-step '+(i===0?'done cur':'')+'"><div class="fs-dot">'+(i+1)+'</div><div class="fs-name">'+name+'</div><div class="fs-d">'+(i===0?'起点':'—')+'</div></div>';
+  });
+  document.getElementById('transferFlow').innerHTML=h;
+}
+/* PRD 3.2.3 实例状态枚举：待审核/审批中/待回执/已接收/异常/已终止；"在途"为转接发起至接收确认前的派生状态标记（不计入节点） */
+var TRANSFERS = [
+  { id:'t1', name:'张伟', from:'第一党支部', to:'第三党支部', type:'internal', reason:'工作调动', start:'2023-09-01', cur:6, status:'已接收', receipt:'HJ20230901-001', note:'' },
+  { id:'t2', name:'李娜', from:'流动党员（外出务工）', to:'流入地党支部', type:'cross', reason:'外出务工', start:'2026-07-20', cur:7, status:'待回执', receipt:'', dueDays:-5, note:'全国系统回执未回传，超5个工作日自动升级督办，支持线下回执补录。' },
+  { id:'t3', name:'王芳', from:'第二党支部', to:'第四党支部', type:'internal', reason:'工作调动', start:'2026-08-05', cur:1, status:'审批中', note:'' },
+  { id:'t4', name:'刘洋', from:'生产党支部', to:'第三党支部', type:'internal', reason:'工作调动', start:'2026-08-09', cur:-1, status:'校验未通过', note:'存在欠缴党费，禁止发起转接（转接前校验）。' },
+  { id:'t5', name:'孙磊', from:'检修党支部', to:'机关党总支', type:'internal', reason:'部门调整', start:'2026-08-08', cur:3, status:'审批中', note:'' },
+  { id:'t6', name:'周敏', from:'后勤党支部', to:'流入地党支部', type:'cross', reason:'异地定居', start:'2026-08-01', cur:6, status:'待回执', receipt:'', dueDays:2, note:'电子介绍信已生成并完成电子签章，推送全国系统等待回执；在途期间党籍状态=转接在途。' },
+  { id:'t7', name:'吴强', from:'第一党支部', to:'外省某党委', type:'cross', reason:'工作调动', start:'2026-07-28', cur:-1, status:'异常', receipt:'', note:'全国系统对接失败/被驳回，转接进入异常，可由原转出组织重新发起或终止。' }
+];
+function transferStatusTag(s, t){
+  var m={
+    '已接收':['green','已接收'],
+    '待回执':['orange','待回执'],
+    '审批中':['blue','审批中'],
+    '待审核':['blue','待审核'],
+    '校验未通过':['red','校验未通过·禁止发起'],
+    '异常':['red','转接异常·待处理'],
+    '已终止':['gray','已终止']
+  };
+  var v=m[s]||['gray',s];
+  var badge = (t && t.status!=='已接收' && t.status!=='已终止' && t.status!=='异常' && t.status!=='校验未通过') ? ' <span class="tag gold">转接在途</span>' : '';
+  return '<span class="tag '+v[0]+'">'+v[1]+'</span>'+badge;
+}
+function transferFlowState(t){
+  if(t.status==='校验未通过') return {cur:-1, block:true};
+  if(t.status==='异常' || t.status==='已终止') return {cur:-1, block:true, halt:true};
+  var flow = t.type==='cross'?TRANSFER_FLOW_CROSS:TRANSFER_FLOW;
+  var cur = flowStepByCur(t.cur, t.type);
+  return {cur:cur, flow:flow, block:false};
+}
+function renderTransfers(){
+  var h='';
+  TRANSFERS.forEach(function(t){
+    var typeTag = t.type==='cross'?'<span class="tag gold">跨省/跨系统</span>':'<span class="tag blue">系统内</span>';
+    var dueInfo='';
+    if(t.status==='待回执'){
+      dueInfo = t.dueDays<0 ? '<span class="tag red">逾期'+(-t.dueDays)+'日·升级督办</span>' : '<span class="tag orange">剩 '+t.dueDays+' 工作日</span>';
+    }
+    var ops='<button class="btn btn-ghost btn-sm" onclick="showTransferFlow(\''+t.id+'\')">查看流程</button>';
+    if(t.status==='待回执' && t.type==='cross') ops+=' <button class="btn btn-ghost btn-sm" onclick="manualReceipt(\''+t.id+'\')">线下回执补录</button>';
+    if(t.status==='异常') ops+=' <button class="btn btn-ghost btn-sm" onclick="resendTransfer(\''+t.id+'\')">重新发起</button>';
+    if(t.status==='审批中' || t.status==='待审核') ops+=' <button class="btn btn-ghost btn-sm" onclick="terminateTransfer(\''+t.id+'\')">终止</button>';
+    h+='<tr><td>'+t.name+'</td><td>'+t.from+'</td><td>'+t.to+'</td><td>'+typeTag+'</td><td>'+t.reason+'</td><td class="mono">'+t.start+'</td><td>'+transferStatusTag(t.status,t)+'</td>'+
+      '<td>'+(t.receipt||'—')+'</td><td>'+dueInfo+'</td>'+
+      '<td style="text-align:right">'+ops+'</td></tr>';
+  });
+  document.getElementById('transferBody').innerHTML=h;
+  var warns = TRANSFERS.filter(function(t){ return t.status==='校验未通过' || t.status==='待回执' || t.status==='异常'; });
+  var w=document.getElementById('transferWarn');
+  if(warns.length){ w.innerHTML='<div class="warn-banner"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 16H3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>当前 '+warns.length+' 笔转接处于「待回执 / 异常 / 校验未通过」状态，需重点关注回执时效与督办（在途期间党籍状态=转接在途，不双重归属）。</div>'; }
+  else w.innerHTML='';
+}
+function showTransferFlow(tid){
+  var t=TRANSFERS.find(function(x){return x.id===tid;}); if(!t) return;
+  var st=transferFlowState(t);
+  var h='';
+  if(st.block){
+    if(t.status==='校验未通过'){
+      h='<div class="alert-row">该转接校验未通过：'+t.note+'，已禁止发起。请先补办欠缴党费 / 办结处分。</div>';
+    } else {
+      h='<div class="alert-row">该转接实例状态为「'+t.status+'」'+(t.note?('：'+t.note):'')+'，流程已暂停。'+(t.status==='异常'?'可由原转出组织重新发起或终止。':'')+'</div>';
+    }
+  } else {
+    h='<div class="sub-note" style="margin-bottom:10px">'+t.name+' · '+t.from+' → '+t.to+'（'+(t.type==='cross'?'跨省/跨系统·全国系统':'系统内')+'）· 原因：'+t.reason+' · 状态：'+t.status+'</div>';
+    h+='<div class="flow-steps flow-vertical">';
+    st.flow.forEach(function(name,i){
+      var done = i<st.cur, cur = i===st.cur;
+      h+='<div class="flow-step '+(done?'done':'')+(cur?' cur':'')+'"><div class="fs-dot">'+(done?'✓':(i+1))+'</div><div class="fs-text"><div class="fs-name">'+name+'</div><div class="fs-d">'+(done?'已办':(cur?'进行中':'待办'))+'</div></div></div>';
+    });
+    h+='</div>';
+    if(t.note) h+='<div class="sub-note" style="margin-top:10px">'+t.note+'</div>';
+  }
+  showModalFlow('转接流程 · '+t.name, h);
+}
+/* 轻量通用流程模态 */
+function showModalFlow(title, bodyHtml){
+  var mask=document.getElementById('modal-flow');
+  if(!mask){
+    mask=document.createElement('div'); mask.className='modal-mask'; mask.id='modal-flow';
+    mask.innerHTML='<div class="modal"><div class="mh"><h3></h3><button class="x" onclick="closeModal(\'modal-flow\')" style="border:none;background:transparent;cursor:pointer"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><div class="mb" id="mfBody"></div><div class="mf"><button class="btn btn-secondary" onclick="closeModal(\'modal-flow\')">关闭</button></div></div>';
+    document.body.appendChild(mask);
+  }
+  mask.querySelector('.mh h3').textContent=title;
+  mask.querySelector('#mfBody').innerHTML=bodyHtml;
+  mask.classList.add('open');
+}
+
+/* 发起转接模态 */
+var CUR_TRANSFER_MEMBER=null;
+function openTransfer(id){
+  var m = id ? MEMBERS.find(function(x){return x.id===id;}) : null;
+  if(!m){ showToast('请先在台账中选择党员发起转接'); return; }
+  CUR_TRANSFER_MEMBER=m;
+  document.getElementById('tfMember').value=m.name+'（'+m.no+'）';
+  document.getElementById('tfFrom').value=m.org;
+  document.getElementById('tfCheck').textContent='';
+  document.getElementById('tfVerify').checked=false;
+  document.getElementById('tfConfirm').disabled=true;
+  openModal('modal-transfer');
+}
+document.getElementById('tfVerify').addEventListener('change', function(){ document.getElementById('tfConfirm').disabled=!this.checked; });
+document.getElementById('tfTo').addEventListener('change', preCheckTransfer);
+document.getElementById('tfType').addEventListener('change', preCheckTransfer);
+document.getElementById('tfReason').addEventListener('change', preCheckTransfer);
+function preCheckTransfer(){
+  var m=CUR_TRANSFER_MEMBER; if(!m) return;
+  var c=document.getElementById('tfCheck');
+  if(m.feeDue){ c.innerHTML='<span style="color:var(--state-red-text)">⚠ 该党员存在欠缴党费，禁止发起转接（转接前校验）。</span>'; document.getElementById('tfVerify').checked=false; document.getElementById('tfConfirm').disabled=true; return; }
+  if(m.status==='异常'){ c.innerHTML='<span style="color:var(--state-red-text)">⚠ 该党员存在未办结处分，禁止发起转接（转接前校验）。</span>'; document.getElementById('tfVerify').checked=false; document.getElementById('tfConfirm').disabled=true; return; }
+  c.innerHTML='<span style="color:var(--state-green-text)">✓ 转接前校验通过（无欠缴党费、无未办结处分）。'+(document.getElementById('tfType').value==='cross'?' 跨省转接将生成全国统一格式电子介绍信并完成电子签章。':'')+'</span>';
+}
+function submitTransfer(){
+  var m=CUR_TRANSFER_MEMBER; if(!m) return;
+  if(m.feeDue || m.status==='异常'){ showToast('校验未通过，禁止发起转接'); return; }
+  var to=document.getElementById('tfTo').value;
+  var type=document.getElementById('tfType').value;
+  var reason=document.getElementById('tfReason').value;
+  var today=nowStr08();
+  var tid='T'+today.replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100);
+  TRANSFERS.unshift({ id:tid, name:m.name, from:m.org, to:to, type:type, reason:reason, start:today, cur:1, status:'审批中', receipt:'', note:'' });
+  // 写入全生命周期时间轴
+  m.extra=m.extra||[]; m.extra.unshift({d:today, t:'transfer', title:'发起组织关系转接', org:m.org, note:'转至 '+to+'（'+(type==='cross'?'跨省/跨系统·电子介绍信已签章':'系统内')+'），原因：'+reason+' · 转接实例号 '+tid, attach:true});
+  closeModal('modal-transfer');
+  renderTransfers(); renderLedger();
+  showToast('已发起转接：'+m.name+' → '+to+'，进入「转出支部审核」（实例号'+tid+'）');
+}
+/* 线下回执补录（跨省对接超时，人工介入） */
+function manualReceipt(tid){
+  var t=TRANSFERS.find(function(x){return x.id===tid;}); if(!t) return;
+  t.receipt='HJ'+nowStr08().replace(/-/g,'')+'-'+Math.floor(Math.random()*900+100);
+  t.status='已接收'; t.cur=t.type==='cross'?8:6; t.dueDays=undefined; t.note='全国系统回执已线下补录，档案自动迁移完成。';
+  renderTransfers();
+  showToast('已线下补录回执：'+t.name+'，转接完成并自动迁移档案');
+}
+/* 异常实例重新发起（原转出组织） */
+function resendTransfer(tid){
+  var t=TRANSFERS.find(function(x){return x.id===tid;}); if(!t) return;
+  t.status='审批中'; t.cur=1; t.note='异常已重新发起，退回至转出支部审核。';
+  renderTransfers();
+  showToast('已重新发起转接：'+t.name+'，退回转出支部审核');
+}
+/* 终止转接（审批中/待审核可终止） */
+function terminateTransfer(tid){
+  var t=TRANSFERS.find(function(x){return x.id===tid;}); if(!t) return;
+  t.status='已终止'; t.note='转接已由用户终止，全程留痕。';
+  renderTransfers();
+  showToast('转接已终止：'+t.name+'（留痕）');
+}
+
+/* ===== 流动党员与党籍异动（3.2.4） ===== */
+var ALTERS = [
+  { name:'黄涛', type:'除名（脱党/不合格）', date:'2025-04-15', reason:'连续6个月无故不参加组织生活、不缴纳党费，按自行脱党予以除名', status:'已生效', attach:true },
+  { name:'孙磊', type:'党内警告', date:'2025-11-03', reason:'因迟到早退被诫勉，影响期一年', status:'已生效', attach:true },
+  { name:'钱志远', type:'停止党籍', date:'2024-06-01', reason:'因私出国定居，按程序停止党籍', status:'已生效', attach:true },
+  { name:'孙慧', type:'恢复党籍', date:'2025-03-10', reason:'停止党籍情形消除，经批准恢复党籍', status:'已生效', attach:true },
+  { name:'何静', type:'劝退', date:'2026-08-10', reason:'连续6个月失联且经多方查找无果，劝其退党', status:'审批中', attach:false }
+];
+function renderMovable(){
+  var list=MEMBERS.filter(function(m){ return m.stage==='flow'; });
+  var h='';
+  list.forEach(function(m){
+    var fi=m.flowInfo||{loc:'—',last:'—',next:'—'};
+    var lost = (m.status==='预警');
+    h+='<tr><td>'+m.name+'</td><td>'+fi.loc+'</td><td>'+m.org+'</td><td class="mono">'+fi.last+'</td><td class="mono">'+fi.next+'</td>'+
+      '<td>'+(lost?'<span class="tag red">失联预警·超6个月</span>':'<span class="tag green">联系正常</span>')+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="contactMovable(\''+m.id+'\')">季度联系提醒</button> <button class="btn btn-ghost btn-sm" onclick="openDetail(\''+m.id+'\')">线上参会</button></td></tr>';
+  });
+  document.getElementById('movableBody').innerHTML=h;
+  var lostList=list.filter(function(m){ return m.status==='预警'; });
+  var w=document.getElementById('movableWarn');
+  if(lostList.length){ w.innerHTML='<div class="alert-row">⚠ '+lostList.length+' 名流动党员连续6个月未联系，已触发失联预警，须启动组织查找并归档记录。</div>'; }
+  else w.innerHTML='';
+}
+function contactMovable(id){
+  var m=MEMBERS.find(function(x){return x.id===id;}); if(!m) return;
+  var today=nowStr08();
+  m.flowInfo=m.flowInfo||{}; m.flowInfo.last=today; m.flowInfo.next=plusMonths(today,3);
+  if(m.status==='预警') m.status='正常';
+  renderMovable(); openDetail(id);
+  showToast('已记录季度联系：'+m.name+'，下次联系 '+m.flowInfo.next);
+}
+function renderAlters(){
+  var h='';
+  ALTERS.forEach(function(a){
+    h+='<tr><td>'+a.name+'</td><td>'+a.type+'</td><td class="mono">'+a.date+'</td><td>'+(a.reason.length>22?a.reason.slice(0,22)+'…':a.reason)+'</td>'+
+      '<td>'+(a.status==='已生效'?'<span class="tag green">已生效·归档</span>':'<span class="tag orange">审批中</span>')+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-ghost btn-sm" onclick="showToast(\'已查看「'+a.type+'」独立审批流与归档材料\')">查看审批流</button></td></tr>';
+  });
+  document.getElementById('alterBody').innerHTML=h;
+}
+
+/* ===== 详情 / 时间轴 / 画像 / 档案变更 ===== */
+var CUR_MEMBER=null;
+function openDetail(id){
+  var m=MEMBERS.find(function(x){return x.id===id;}); if(!m) return;
+  CUR_MEMBER=m;
+  document.getElementById('detTitle').textContent=m.name+' · 全生命周期';
+  document.getElementById('detProfile').innerHTML=
+    '<div class="pa">'+m.name.charAt(0)+'</div>'+
+    '<div class="pi" style="flex:1"><div class="pn">'+m.name+' '+stageTag(m.stage)+' '+statusTag(m.status)+'</div>'+
+    '<div class="po">'+m.org+' · 党员号 '+m.no+'</div></div>';
+  // 时间轴
+  var evs=buildEvents(m).slice().sort(function(a,b){ return a.d<b.d?-1:1; });
+  var th='';
+  evs.forEach(function(e){
+    var dotCls = (['apply','activist','target','probationary','full','reward','punish','transfer','exit','archive'].indexOf(e.t)>=0)?e.t:'apply';
+    th+='<div class="tl-node"><div class="tl-dot '+dotCls+'"></div><div class="tl-card">'+
+        '<div class="tl-h"><span class="tl-date">'+e.d+'</span><span class="tl-title">'+e.title+'</span></div>'+
+        '<div class="tl-meta">办理 / 组织：'+e.org+'</div>'+
+        (e.note?'<div class="tl-note">'+e.note+'</div>':'')+
+        (e.attach?'<div class="tl-attach"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M21 11.5l-8.5 8.5a4 4 0 01-5.7-5.7l8.5-8.5a2.8 2.8 0 014 4l-8.5 8.5a1.4 1.4 0 01-2-2l7.8-7.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>附材料已归档</div>':'')+
+        '</div></div>';
+  });
+  document.getElementById('detTimeline').innerHTML=th;
+  // 画像
+  renderPortrait(m);
+  // 档案变更
+  renderArchive(m);
+  // 操作区
+  renderActions(m);
+  // 默认展示时间轴
+  switchDrawerTab('tl');
+  openDrawer('drawer-detail');
+}
+function drawerTabReset(){ switchDrawerTab('tl'); }
+function switchDrawerTab(key){
+  ['tl','pf','arc'].forEach(function(k){ document.getElementById('dp-'+k).classList.toggle('hidden', k!==key); });
+  document.querySelectorAll('.drawer-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-dt')===key || (key==='tl'&&b.textContent.indexOf('时间轴')>=0) || (key==='pf'&&b.textContent.indexOf('画像')>=0) || (key==='arc'&&b.textContent.indexOf('档案')>=0)); });
+}
+function renderPortrait(m){
+  var box=document.getElementById('detPortrait');
+  if(!m.pf){ box.innerHTML='<div class="sub-note" style="grid-column:1/3">该党员处于'+stageTag(m.stage).replace(/<[^>]+>/g,'')+'阶段，组织生活参与率、学习完成率、积分排名等画像指标暂不计入（仅发展进度与基础信息有效）。</div>'; return; }
+  var p=m.pf;
+  var bar=function(val,color){ return '<div class="pf-bar"><i style="width:'+val+'%;background:'+color+'"></i></div>'; };
+  box.innerHTML=
+    kv('党龄 / 党籍', m.age)+
+    '<div class="pf-card" style="grid-column:1/3"><div class="pf-l">党龄党籍</div><div class="pf-v">'+m.age+'</div></div>'+
+    '<div class="pf-card"><div class="pf-l">组织生活参与率</div><div class="pf-v">'+p.orgLife+'<span class="u">%</span></div>'+bar(p.orgLife,'var(--state-green)')+'</div>'+
+    '<div class="pf-card"><div class="pf-l">学习完成率</div><div class="pf-v">'+p.study+'<span class="u">%</span></div>'+bar(p.study,'var(--brand-blue)')+'</div>'+
+    '<div class="pf-card"><div class="pf-l">党费缴纳情况</div><div class="pf-v" style="font-size:15px">'+p.fee+'</div></div>'+
+    '<div class="pf-card"><div class="pf-l">积分排名</div><div class="pf-v">'+p.score+'<span class="u">/ 683 · 第 '+p.scoreRank+' 名</span></div></div>'+
+    '<div class="pf-card"><div class="pf-l">奖惩记录</div><div class="pf-v">'+p.rewards+'<span class="u">次</span></div></div>'+
+    '<div class="pf-card"><div class="pf-l">志愿服务时长</div><div class="pf-v">'+p.volunteer+'<span class="u">小时</span></div></div>';
+}
+function renderArchive(m){
+  var box=document.getElementById('detArchive');
+  var logs=(m.changeLog||[]);
+  var logHtml = logs.length ? logs.map(function(l){ return '<div class="tl-card" style="margin-top:8px"><div class="tl-h"><span class="tl-date">'+l.d+'</span><span class="tl-title">'+l.field+' 变更</span></div><div class="tl-meta">'+l.note+'</div></div>'; }).join('') : '<div class="sub-note">暂无核心字段变更记录。</div>';
+  box.innerHTML=
+    '<div class="sub-note" style="margin-bottom:10px">核心字段（姓名 / 身份证号 / 入党时间 / 转正时间）变更须提交证明材料，经支部审核、党委备案后方可生效，变更记录永久留存。</div>'+
+    '<div class="field"><label>姓名</label><input id="arcName" value="'+m.name+'"></div>'+
+    '<div class="field"><label>身份证号</label><input id="arcId" value="'+m.idcard+'"></div>'+
+    '<div class="field"><label>入党 / 转正时间</label><input id="arcJoin" value="'+(m.join==='—'?'—':m.join)+'"></div>'+
+    '<div class="field"><label>变更证明材料（必传，留痕归档）</label><input type="file" id="arcProof" style="padding:6px"></div>'+
+    '<div class="verify-row"><input type="checkbox" id="arcVerify"><label for="arcVerify">已上传证明材料，确认提交支部审核 → 党委备案流程（二次验证）。</label></div>'+
+    '<div style="display:flex;gap:10px;margin-top:4px"><button class="btn btn-primary" onclick="submitArchiveChange()">提交变更（留痕）</button></div>'+
+    '<div style="margin-top:14px"><b style="font-size:13px">变更记录（永久留存）</b>'+logHtml+'</div>';
+}
+function submitArchiveChange(){
+  var m=CUR_MEMBER; if(!m) return;
+  var proof=document.getElementById('arcProof');
+  var verify=document.getElementById('arcVerify');
+  if(!proof || !proof.value){ showToast('请先上传变更证明材料'); return; }
+  if(!verify.checked){ showToast('请勾选二次验证后提交'); return; }
+  var newName=document.getElementById('arcName').value.trim()||m.name;
+  var today=nowStr08();
+  m.changeLog=m.changeLog||[];
+  m.changeLog.unshift({d:today, field:newName, note:'核心字段变更经支部审核、党委备案生效；证明材料已归档，变更记录永久留存'});
+  m.extra=m.extra||[]; m.extra.unshift({d:today, t:'archive', title:'档案核心字段变更', org:m.org, note:'提交证明材料，经支部审核、党委备案生效，变更记录留痕', attach:true});
+  showToast('已提交档案变更：进入支部审核 → 党委备案，记录已留痕');
+  renderArchive(m); renderPortrait(m);
+}
+function revealSensitive(){
+  if(!CUR_MEMBER) return;
+  confirmOp('查看敏感信息','查看身份证号与手机号属于敏感操作，将记入审计日志。确认以明文查看？', function(){
+    var real={ m1:['320104199003050035','13812346621'], m2:['320104199105151527','13912303380'], m3:['320104199202222241','13712301190'], m4:['320104199203133318','13612307742'], m5:['320104199204044409','13512302256'], m6:['320104199305055512','13312308831'], m7:['320104199006066603','13812304410'], m8:['320104199107077715','13912309023'], m9:['320104199208088826','13712305518'], m10:['320104199209099937','13512303344'], m11:['320104198211111148','13812306677'], m12:['320104198312122259','13912301198'], m13:['320104199011023367','13712302210'], m14:['320104199108154478','13912305567'] };
+    var r=real[CUR_MEMBER.id]||[CUR_MEMBER.idcard,CUR_MEMBER.mobile];
+    var ic=document.getElementById('detIdcard'); var mb=document.getElementById('detMobile');
+    if(ic) ic.textContent=r[0]; if(mb) mb.textContent=r[1];
+    showToast('已以明文查看（操作已留痕）');
+  });
+}
+function renderActions(m){
+  var box=document.getElementById('detActions');
+  if(m.stage==='exit'){ box.innerHTML='<div class="sub-note">该党员党籍已终止，生命周期归档完成。如需更正请走档案纠错审批。</div>'; return; }
+  if(m.stage==='full'||m.stage==='flow'){
+    box.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" onclick="openDispose()">党籍处置 / 异动</button>'+
+      '<button class="btn btn-secondary" onclick="openTransfer(\''+m.id+'\')">发起转接</button></div>';
+    return;
+  }
+  var nextMap={ apply:'activist', activist:'target', target:'probationary', probationary:'full' };
+  var nextLabel={ activist:'入党积极分子', target:'发展对象', probationary:'预备党员', full:'正式党员' };
+  var nx=nextMap[m.stage];
+  box.innerHTML='<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" onclick="advanceStage()">推进至「'+nextLabel[nx]+'」</button>'+
+    '<button class="btn btn-secondary" onclick="showToast(\'已退回上一阶段并留痕（演示）\')">退回</button>'+
+    '<button class="btn btn-danger" onclick="openDispose()">处置 / 异动</button></div>';
+}
+function advanceStage(){
+  var m=CUR_MEMBER; if(!m) return;
+  var nextMap={ apply:'activist', activist:'target', target:'probationary', probationary:'full' };
+  var nextLabel={ activist:'入党积极分子', target:'发展对象', probationary:'预备党员', full:'正式党员' };
+  var nx=nextMap[m.stage]; if(!nx) return;
+  confirmOp('推进阶段流转','将 '+m.name+' 从「'+stageTag(m.stage).replace(/<[^>]+>/g,'')+'」推进至「'+nextLabel[nx]+'」。该操作将写入全生命周期时间轴并同步归档。', function(){
+    var today=nowStr08();
+    m.stage=nx;
+    if(nx==='full'){ m.join=today; m.age='新转正'; if(m.status==='预警') m.status='正常'; m.extra=m.extra||[]; m.extra.unshift({d:today,t:'full',title:'转为正式党员',org:m.org,note:'预备期满，系统记录转正',attach:true}); }
+    else { m.extra=m.extra||[]; m.extra.unshift({d:today,t:nx,title:'推进至'+nextLabel[nx],org:m.org,note:'阶段流转（系统记录）',attach:false}); }
+    var s=STAGES.find(function(x){return x.key===m.stage;}); if(s) s.count++;
+    renderStageMap(); renderLedger(); renderDevNodes(); openDetail(m.id);
+    showToast('已推进至「'+nextLabel[nx]+'」，时间轴已留痕');
+  });
+}
+function openDispose(){ var cb=document.getElementById('dpVerify'); cb.checked=false; document.getElementById('dpConfirm').disabled=true; openModal('modal-dispose'); }
+document.getElementById('dpVerify').addEventListener('change', function(){ document.getElementById('dpConfirm').disabled=!this.checked; });
+function confirmDispose(){
+  var m=CUR_MEMBER; if(!m) return;
+  var type=document.getElementById('dpType').value;
+  var reason=document.getElementById('dpReason').value.trim();
+  if(!reason){ showToast('请填写原因说明'); return; }
+  var terminal = (['自愿退党','劝其退党','除名（脱党/不合格）','死亡','开除党籍','劝退'].indexOf(type)>=0);
+  var restore = (type==='恢复党籍');
+  var today=nowStr08();
+  m.extra=m.extra||[]; m.extra.unshift({d:today,t:'exit',title:(restore?'党籍恢复 · ':((terminal?'党籍终止 · ':'纪律处分/异动 · '))+type),org:m.org,note:reason,attach:true});
+  if(terminal){ m.stage='exit'; m.status='终止'; }
+  else if(restore){ m.status='正常'; }
+  else { m.status='异常'; }
+  closeModal('modal-dispose');
+  renderStageMap(); renderLedger(); renderMovable(); renderAlters(); openDetail(m.id);
+  showToast(type+' 已登记并留痕'+(terminal?'，党籍终止':(restore?'，党籍恢复':'，进入处置')));
+}
+
+/* ===== 通用确认模态（轻量实现） ===== */
+var _confirmCb=null;
+function confirmOp(title, msg, cb){ _confirmCb=cb; var mask=ensureConfirm(); mask.querySelector('.mh h3').textContent=title; mask.querySelector('.mb').innerHTML='<div class="sub-note" style="font-size:14px;color:var(--text-primary);line-height:1.7">'+msg+'</div>'; mask.classList.add('open'); }
+function ensureConfirm(){
+  var mask=document.getElementById('modal-confirm');
+  if(!mask){
+    mask=document.createElement('div'); mask.className='modal-mask'; mask.id='modal-confirm';
+    mask.innerHTML='<div class="modal"><div class="mh"><h3></h3><button class="x" onclick="closeConfirm()" style="border:none;background:transparent;cursor:pointer"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div><div class="mb"></div><div class="mf"><button class="btn btn-secondary" onclick="closeConfirm()">取消</button><button class="btn btn-primary" onclick="runConfirm()">确认</button></div></div>';
+    document.body.appendChild(mask);
+  }
+  return mask;
+}
+function closeConfirm(){ var mask=document.getElementById('modal-confirm'); if(mask) mask.classList.remove('open'); }
+function runConfirm(){ var cb=_confirmCb; closeConfirm(); if(cb) cb(); }
+
+/* ===== 组织下拉填充 ===== */
+function fillOrgOptions(){
+  var orgs=[]; MEMBERS.forEach(function(m){ if(orgs.indexOf(m.org)<0) orgs.push(m.org); });
+  var sel=document.getElementById('fOrg'); orgs.forEach(function(o){ var op=document.createElement('option'); op.value=o; op.textContent=o; sel.appendChild(op); });
+}
+
+/* ===== 初始化 ===== */
+fillOrgOptions();
+renderStageMap();
+renderLedger();
+devPickOptions();
+renderDevNodes();
+renderTransfers();
+renderTransferFlowStatic();
+renderMovable();
+renderAlters();
+activateTabFromHash();
+</script>
+</body>
+</html>

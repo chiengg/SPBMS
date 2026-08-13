@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宣传与思想阵地 · 党建管理系统</title>
+<!--
+  页面：13 宣传与思想阵地（PRD 3.6 · PC · 宣传分组主页）
+  设计系统：复用 设计令牌 的 :root 变量块；与 08/10/11/12 同构（侧栏/卡片/表格/抽屉/模态）。
+  结构（主区 3 个子标签）：
+    ① 党建资讯门户（3.6.1）：四类稿件(党建要闻/上级精神/基层动态/通知公告)台账 + 分级发布(支部/总支/党委 + 上级下推只读) + 发布前审核(草稿→待审核→已发布/已驳回) + 置顶/轮播/定向推送/定时发布 + 撤回 + 详情统计
+    ② 党建风采展示（3.6.2）：先进党支部/优秀党员事迹台账 + 相册短视频 + 点赞 + 评论审核闭环(待审核→已展示/删除)
+    ③ 红色教育资源（3.6.3）：基地展馆/党史知识库/革命人物/党史时间轴 四类库检索 + 党史时间轴可视化
+  权限（推荐方案·角色矩阵无单列，按"宣传委员/管理员"落地）：支部宣传委员发起本层级内容、党委宣传部门审核发布；上级下推内容下级只读不可改；红色资源上级统一维护下级只读。
+  交互：新建稿件、审核发布/驳回、撤回、置顶/轮播切换、定时发布、定向推送、点赞、评论审核、红色资源检索、hash 路由。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2; --state-gray-text: #4B5563; --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 520px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+
+/* 外壳 */
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-sub .nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+.role-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--state-blue-bg); color: var(--state-blue-text); font-size: 11px; font-weight: 600; }
+
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+
+/* 子标签（主区） */
+.sub-tabs { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; align-self: flex-start; }
+.sub-tab { height: 32px; padding: 0 16px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: all .12s ease; }
+.sub-tab:hover { color: var(--text-primary); background: var(--bg-page); }
+.sub-tab.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.tab-panel { display: flex; flex-direction: column; gap: var(--card-gap); }
+.tab-panel.hidden { display: none; }
+
+/* 按钮 / tag */
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-primary:disabled { background: var(--state-gray-dot); cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.btn-danger { background: #fff; color: var(--state-red-text); border-color: var(--state-red-bg); } .btn-danger:hover { background: var(--state-red-bg); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); }
+.tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); }
+.tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gold { background: #FCF2DD; color: #9A6B12; }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); gap: 10px; flex-wrap: wrap; }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-5); display: flex; flex-direction: column; gap: 6px; }
+.kpi .lbl { font-size: var(--fs-caption); color: var(--text-secondary); }
+.kpi .num { font-size: var(--fs-flip); font-weight: 700; line-height: 1; font-family: var(--font-num); }
+.kpi .num.red { color: var(--brand-red); } .kpi .num.blue { color: var(--brand-blue); } .kpi .num.green { color: var(--state-green); } .kpi .num.gold { color: var(--brand-gold); }
+.kpi .trend { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+/* 流程步骤条（横向） */
+.flow-strip { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+.flow-step { flex: 1; min-width: 92px; text-align: center; position: relative; }
+.flow-step .fs-dot { width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 6px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--state-gray-dot); position: relative; z-index: 1; }
+.flow-step.done .fs-dot { background: var(--state-green); }
+.flow-step.cur .fs-dot { background: var(--brand-red); box-shadow: 0 0 0 3px rgba(194,31,48,0.18); }
+.flow-step .fs-name { font-size: 12px; font-weight: 600; }
+.flow-step .fs-d { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.flow-step::before { content: ""; position: absolute; top: 12px; left: -50%; width: 100%; height: 2px; background: var(--border-color); z-index: 0; }
+.flow-step:first-child::before { display: none; }
+.flow-step.done::before, .flow-step.cur::before { background: var(--state-green); }
+
+/* 筛选区 */
+.filters { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.filters select, .filters input { height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 10px; font-size: 13px; background: var(--bg-card); color: var(--text-primary); }
+.filters input { min-width: 160px; }
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table.tb { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.tb thead th { text-align: left; padding: 10px var(--space-4); background: var(--bg-page); color: var(--text-secondary); font-weight: 600; font-size: var(--fs-caption); border-bottom: 1px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; }
+table.tb tbody td { padding: 11px var(--space-4); border-bottom: 1px solid var(--border-light); vertical-align: middle; white-space: nowrap; }
+table.tb tbody tr:hover { background: var(--bg-page); }
+table.tb tbody td .name-cell { display: flex; align-items: center; gap: 8px; }
+table.tb tbody td .name-cell .av { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; flex: none; }
+.mono { font-family: var(--font-num); }
+.muted { color: var(--text-secondary); font-size: 12px; }
+.pager { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); font-size: var(--fs-caption); color: var(--text-secondary); }
+.pager .pg-btn { height: 28px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; font-size: 13px; }
+.pager .pg-btn:disabled { color: var(--state-gray-dot); cursor: not-allowed; }
+
+/* 通用 kv */
+.kv-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: var(--fs-body); }
+.kv-row .k { color: var(--text-secondary); min-width: 96px; flex: none; }
+.kv-row .v { color: var(--text-primary); font-weight: 500; }
+.kv-row.col { flex-direction: column; align-items: flex-start; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* 卡片网格（风采/红色资源） */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--card-gap); }
+.tile { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .14s ease, transform .14s ease; }
+.tile:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.tile .cover { height: 120px; background: linear-gradient(135deg, var(--brand-red), #8E1623); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; padding: 0 12px; text-align: center; }
+.tile .cover.blue { background: linear-gradient(135deg, var(--brand-blue), #1E4E8C); }
+.tile .cover.gold { background: linear-gradient(135deg, var(--brand-gold), #9A6B12); }
+.tile .cover.green { background: linear-gradient(135deg, var(--state-green), #1F6B41); }
+.tile .tb-pad { padding: var(--space-4); display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.tile .tb-pad h3 { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.tile .tb-pad .ds { font-size: 12px; color: var(--text-secondary); flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tile .tb-foot { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+.tile .tb-foot .like { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; color: var(--brand-red); }
+.tile .tb-foot .like:hover { text-decoration: underline; }
+
+/* 时间轴（党史） */
+.timeline { position: relative; padding-left: 22px; }
+.timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: var(--border-color); }
+.tl-item { position: relative; padding: 0 0 var(--space-5) 0; }
+.tl-item::before { content: ""; position: absolute; left: -19px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--brand-red); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--state-red-bg); }
+.tl-item .tl-yr { font-size: 13px; font-weight: 700; color: var(--brand-red); font-family: var(--font-num); }
+.tl-item .tl-t { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.tl-item .tl-d { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+/* 抽屉 */
+.drawer-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.42); display: none; z-index: 300; }
+.drawer-mask.open { display: block; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: var(--aside-width); max-width: 94vw; background: var(--bg-card); box-shadow: var(--shadow-md); transform: translateX(100%); transition: transform .24s ease; z-index: 301; display: flex; flex-direction: column; }
+.drawer-mask.open .drawer { transform: translateX(0); }
+.drawer .dh { height: var(--topbar-height); display: flex; align-items: center; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-color); gap: 10px; }
+.drawer .dh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.drawer .dh .x { width: 32px; height: 32px; border: none; background: transparent; border-radius: var(--radius-md); display: grid; place-items: center; color: var(--text-secondary); }
+.drawer .dh .x:hover { background: var(--bg-page); }
+.drawer .db { flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.45); display: none; align-items: center; justify-content: center; z-index: 400; padding: var(--space-4); }
+.modal-mask.open { display: flex; }
+.modal { width: 600px; max-width: 100%; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; animation: pop .18s ease; }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal .mh { display: flex; align-items: center; padding: var(--space-5); border-bottom: 1px solid var(--border-light); }
+.modal .mh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.modal .mb { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.modal .mf { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-light); background: var(--bg-page); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 600; }
+.field select, .field textarea, .field input { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 10px; font-size: var(--fs-body); font-family: inherit; background: #fff; color: var(--text-primary); }
+.field textarea { min-height: 80px; resize: vertical; }
+.field select:focus, .field textarea:focus, .field input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.hidden { display: none !important; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+/* 审核/批阅 列表 */
+.audit-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.audit-item { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: 10px; }
+.audit-item .ai-main { flex: 1; min-width: 0; }
+.audit-item .ai-main .nm { font-weight: 600; }
+.audit-item .ai-main .ds { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.audit-item .ai-act { display: flex; gap: 8px; flex: none; }
+
+.warn-banner { display: flex; align-items: center; gap: 10px; background: var(--state-orange-bg); color: var(--state-orange-text); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; margin-bottom: var(--space-4); }
+.warn-banner svg { width: 18px; height: 18px; flex: none; }
+.check-result { border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; }
+.check-result.ok { background: var(--state-green-bg); color: var(--state-green-text); }
+.check-result.block { background: var(--state-red-bg); color: var(--state-red-text); }
+.empty { text-align: center; color: var(--text-secondary); padding: var(--space-6) 0; font-size: 13px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; transition: all .22s ease; z-index: 500; pointer-events: none; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="logo"><div class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.2 4.8L19 8.3l-3.5 3.4.9 4.9L12 14.6 7.6 16.6l.9-4.9L5 8.3l4.8-.5L12 3z" fill="#fff"/></svg></div><div class="t">智慧党建<small>党建管理系统</small></div></div>
+  <nav class="nav">
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">首页</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M15 14.5a4.5 4.5 0 019 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed" id="grp-relation">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 7h7v10H4zM13 7h7v10h-7M8 12h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 7l-3-3M17 17l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">关系变动管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#movable" onclick="navLeaf(this)">流动党员与党籍异动管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织生活管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+        <a class="nav-item" href="10-组织生活管理.html#demo" onclick="navLeaf(this)">民主生活会</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h7v14H4zM13 5h7v14h-7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <!-- 宣传与思想阵地（本模块分组） -->
+    <div class="nav-group active" id="grp-propaganda">
+      <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M3 5h18v12H8l-4 4V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">宣传与思想阵地</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item active" href="13-宣传与思想阵地.html#portal" onclick="navLeaf(this)">党建资讯门户</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#honor" onclick="navLeaf(this)">党建风采展示</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#red" onclick="navLeaf(this)">红色教育资源</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="ng-label">特色业务</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="14-特色业务.html#report" onclick="navLeaf(this)">双报到双服务</a>
+        <a class="nav-item" href="14-特色业务.html#vol" onclick="navLeaf(this)">志愿服务</a>
+        <a class="nav-item" href="14-特色业务.html#fact" onclick="navLeaf(this)">我为群众办实事</a>
+        <a class="nav-item" href="14-特色业务.html#fusion" onclick="navLeaf(this)">党建+业务融合</a>
+        <a class="nav-item" href="14-特色业务.html#brand" onclick="navLeaf(this)">党建品牌创建</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19 12a7 7 0 00-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 00-2.2-1.3L16 3H8l-.4 2.5A7 7 0 005.4 6.8l-2.3-1-2 3.4 2 1.5A7 7 0 003 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 002.2 1.3L8 21h8l.4-2.5a7 7 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="ng-label">系统管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="15-系统管理.html#role" onclick="navLeaf(this)">权限与角色管理</a>
+        <a class="nav-item" href="15-系统管理.html#msg" onclick="navLeaf(this)">消息中心</a>
+        <a class="nav-item" href="15-系统管理.html#export" onclick="navLeaf(this)">台账导出引擎</a>
+        <a class="nav-item" href="15-系统管理.html#config" onclick="navLeaf(this)">系统配置</a>
+        <a class="nav-item" href="15-系统管理.html#cert" onclick="navLeaf(this)">党员证明开具</a>
+      </div>
+    </div>
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<!-- ===== 主区 ===== -->
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">宣传与思想阵地 <span>/</span> <b id="crumbActive">党建资讯门户</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="topSearch" placeholder="搜索资讯 / 风采 / 红色资源"></div>
+    <div class="top-actions">
+      <button class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>中共XX街道机关支部</button>
+      <button class="icon-btn" title="消息"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v10H8l-4 4V6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="dot">3</span></button>
+      <div class="user"><div class="avatar">钱</div><div><div class="nm">钱*（宣传委员）</div><div class="role">宣传管理员</div></div></div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>宣传与思想阵地</h1><div class="sub">覆盖 PRD 3.6：党建资讯门户分级发布与置顶/轮播/定向推送/定时发布、党建风采点赞与审核后评论、红色教育资源四类库。</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="exportPortal()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>导出发布台账</button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpis" id="kpis"></div>
+
+    <!-- 子标签 -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="st-portal" onclick="switchSub('portal')">党建资讯门户</button>
+      <button class="sub-tab" id="st-honor" onclick="switchSub('honor')">党建风采展示</button>
+      <button class="sub-tab" id="st-red" onclick="switchSub('red')">红色教育资源</button>
+    </div>
+
+    <!-- ================= 子标签① 党建资讯门户 ================= -->
+    <div class="tab-panel" id="panel-portal">
+      <div class="card">
+        <div class="card-h">
+          <h2>资讯发布流程</h2>
+          <span class="sub-note">分级发布 · 发布前审核 · 上级下推内容下级只读</span>
+        </div>
+        <div class="card-b">
+          <div class="flow-strip">
+            <div class="flow-step done"><div class="fs-dot">1</div><div class="fs-name">撰写草稿</div><div class="fs-d">宣传委员</div></div>
+            <div class="flow-step cur"><div class="fs-dot">2</div><div class="fs-name">提交审核</div><div class="fs-d">待党委审</div></div>
+            <div class="flow-step"><div class="fs-dot">3</div><div class="fs-name">审核发布</div><div class="fs-d">置顶/轮播</div></div>
+            <div class="flow-step"><div class="fs-dot">4</div><div class="fs-name">定向/定时</div><div class="fs-d">精准触达</div></div>
+            <div class="flow-step"><div class="fs-dot">5</div><div class="fs-name">撤下/撤回</div><div class="fs-d">可撤回</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>资讯稿件台账</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewArticle()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>新建稿件</button>
+        </div>
+        <div class="card-b">
+          <div class="filters" style="margin-bottom:14px">
+            <select id="fType"><option value="">全部类型</option><option>党建要闻</option><option>上级精神</option><option>基层动态</option><option>通知公告</option></select>
+            <select id="fStatus"><option value="">全部状态</option><option>草稿</option><option>待审核</option><option>已发布</option><option>已驳回</option></select>
+            <input id="fKw" placeholder="搜索标题 / 作者 / 组织">
+            <button class="btn btn-secondary btn-sm" onclick="renderPortal()">查询</button>
+          </div>
+          <div class="table-wrap">
+            <table class="tb" id="articleTb">
+              <thead><tr><th>标题</th><th>类型</th><th>层级</th><th>状态</th><th>置顶/轮播</th><th>浏览</th><th>点赞</th><th>发布时间</th><th>操作</th></tr></thead>
+              <tbody id="articleBody"></tbody>
+            </table>
+          </div>
+          <div class="pager"><span id="articleCount"></span><span style="margin-left:auto">共 <b id="articleTotal">0</b> 条</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 子标签② 党建风采展示 ================= -->
+    <div class="tab-panel hidden" id="panel-honor">
+      <div class="card">
+        <div class="card-h">
+          <h2>先进典型风采</h2>
+          <button class="btn btn-primary btn-sm" onclick="openNewHonor()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>报送风采</button>
+        </div>
+        <div class="card-b">
+          <div class="filters" style="margin-bottom:14px">
+            <select id="fHType"><option value="">全部类型</option><option>先进党支部</option><option>优秀党员</option></select>
+            <input id="fHKw" placeholder="搜索事迹标题 / 对象 / 组织">
+            <button class="btn btn-secondary btn-sm" onclick="renderHonor()">查询</button>
+          </div>
+          <div class="grid" id="honorGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 子标签③ 红色教育资源 ================= -->
+    <div class="tab-panel hidden" id="panel-red">
+      <div class="card">
+        <div class="card-h">
+          <h2>红色教育资源库</h2>
+          <span class="sub-note">上级统一维护 · 下级只读检索</span>
+        </div>
+        <div class="card-b">
+          <div class="filters" style="margin-bottom:14px">
+            <select id="fRCat"><option value="">全部分类</option><option>基地展馆</option><option>党史知识库</option><option>革命人物</option><option>党史时间轴</option></select>
+            <input id="fRKw" placeholder="搜索资源名称 / 时期">
+            <button class="btn btn-secondary btn-sm" onclick="renderRed()">查询</button>
+          </div>
+          <div class="grid" id="redGrid"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>党史时间轴（精选）</h2><span class="sub-note">按时期排序 · 点击查看详情</span></div>
+        <div class="card-b"><div class="timeline" id="redTimeline"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 稿件详情抽屉 ===== -->
+<div class="drawer-mask" id="articleDrawer"><div class="drawer">
+  <div class="dh"><h3 id="articleDTitle">稿件详情</h3><button class="x" onclick="closeDrawer('articleDrawer')">✕</button></div>
+  <div class="db" id="articleDbody"></div>
+</div></div>
+
+<!-- ===== 风采详情抽屉 ===== -->
+<div class="drawer-mask" id="honorDrawer"><div class="drawer">
+  <div class="dh"><h3 id="honorDTitle">风采详情</h3><button class="x" onclick="closeDrawer('honorDrawer')">✕</button></div>
+  <div class="db" id="honorDbody"></div>
+</div></div>
+
+<!-- ===== 新建稿件模态 ===== -->
+<div class="modal-mask" id="newArticleModal"><div class="modal">
+  <div class="mh"><h3>新建资讯稿件</h3><button class="x" onclick="closeModal('newArticleModal')" style="border:none;background:transparent;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field-row">
+      <div class="field"><label>稿件类型</label><select id="naType"><option>党建要闻</option><option>上级精神</option><option>基层动态</option><option>通知公告</option></select></div>
+      <div class="field"><label>发布层级</label><select id="naLevel"><option>支部</option><option>总支</option><option>党委</option></select></div>
+    </div>
+    <div class="field"><label>标题</label><input id="naTitle" placeholder="请输入稿件标题"></div>
+    <div class="field"><label>摘要</label><textarea id="naSummary" placeholder="一句话摘要（用于门户卡片展示）"></textarea></div>
+    <div class="field"><label>正文</label><textarea id="naContent" placeholder="稿件正文内容"></textarea></div>
+    <div class="field-row">
+      <div class="field"><label>置顶</label><select id="naTop"><option value="0">否</option><option value="1">是（首页置顶）</option></select></div>
+      <div class="field"><label>轮播</label><select id="naCarousel"><option value="0">否</option><option value="1">是（首页轮播）</option></select></div>
+    </div>
+    <div class="field"><label>定向推送范围（留空=全员）</label><input id="naPush" placeholder="如：机关支部全体党员 / 各支部书记"></div>
+    <div class="field"><label>定时发布时间（留空=审核后立即发布）</label><input id="naSchedule" type="datetime-local"></div>
+    <div class="check-result" id="naHint" style="display:none"></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-secondary" onclick="closeModal('newArticleModal')">取消</button>
+    <button class="btn btn-ghost" onclick="submitNewArticle('draft')">存为草稿</button>
+    <button class="btn btn-primary" onclick="submitNewArticle('review')">提交审核</button>
+  </div>
+</div></div>
+
+<!-- ===== 新建风采模态 ===== -->
+<div class="modal-mask" id="newHonorModal"><div class="modal">
+  <div class="mh"><h3>报送党建风采</h3><button class="x" onclick="closeModal('newHonorModal')" style="border:none;background:transparent;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field-row">
+      <div class="field"><label>风采类型</label><select id="nhType"><option>先进党支部</option><option>优秀党员</option></select></div>
+      <div class="field"><label>对象名称</label><input id="nhSubject" placeholder="如：中共XX街道机关支部 / 张伟"></div>
+    </div>
+    <div class="field"><label>所属组织</label><input id="nhOrg" placeholder="如：中共XX街道机关支部"></div>
+    <div class="field"><label>封面说明</label><input id="nhCover" placeholder="如：支部活动合影"></div>
+    <div class="field"><label>事迹描述</label><textarea id="nhDesc" placeholder="先进事迹 / 典型经验描述"></textarea></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-secondary" onclick="closeModal('newHonorModal')">取消</button>
+    <button class="btn btn-primary" onclick="submitNewHonor()">提交报送</button>
+  </div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 数据 ============ */
+var ARTICLES = [
+  {id:'A2026-001', title:'街道党工委召开2026年党建工作部署会', type:'党建要闻', level:'党委', author:'钱*（宣传委员）', org:'中共XX街道党工委', status:'已发布', top:1, carousel:1, push:'', schedule:'', publishTime:'2026-03-02 09:30', summary:'总结2025年党建工作，部署2026年重点任务。', content:'会议总结了2025年度党建工作成效，明确了2026年"强基础、树品牌、促融合"三项重点任务，强调以高质量党建推动基层治理。', views:3820, likes:186, comments:24},
+  {id:'A2026-002', title:'关于深入学习贯彻党的二十大精神的通知', type:'上级精神', level:'上级下推', author:'区委组织部', org:'区委组织部', status:'已发布', top:1, carousel:0, push:'', schedule:'', publishTime:'2026-02-20 10:00', summary:'转发上级关于持续深入学习党的二十大精神的工作要求。', content:'要求各支部把学习贯彻党的二十大精神作为首要政治任务，纳入"三会一课"和主题党日必学内容。', views:5120, likes:240, comments:31},
+  {id:'A2026-003', title:'机关支部3月"学雷锋"主题党日活动预告', type:'基层动态', level:'支部', author:'孙*（组织委员）', org:'中共XX街道机关支部', status:'已发布', top:0, carousel:0, push:'机关支部全体党员', schedule:'', publishTime:'2026-03-05 14:00', summary:'3月5日赴社区开展志愿服务，请党员准时参加。', content:'活动安排：上午集中学习雷锋事迹，下午分组进入社区开展环境整治与敬老服务，需佩戴党员徽章。', views:980, likes:52, comments:9},
+  {id:'A2026-004', title:'关于开展"学习身边榜样"活动的实施方案', type:'通知公告', level:'支部', author:'王*（宣传委员）', org:'中共XX街道机关支部', status:'待审核', top:0, carousel:0, push:'', schedule:'', publishTime:'', summary:'在支部范围内选树身边先进典型，营造比学赶超氛围。', content:'通过党员自荐、群众推荐、支部研究方式确定"身边榜样"人选，事迹在门户风采栏展示。', views:0, likes:0, comments:0},
+  {id:'A2026-005', title:'党工委理论学习中心组（扩大）学习会通知', type:'通知公告', level:'党委', author:'钱*（宣传委员）', org:'中共XX街道党工委', status:'待审核', top:0, carousel:0, push:'各支部书记', schedule:'2026-03-12 09:00', publishTime:'', summary:'定于3月12日召开中心组（扩大）学习会，请提前准备发言。', content:'学习主题：习近平总书记关于党的建设的重要思想。请各支部书记围绕"党建+治理"准备5分钟交流发言。', views:0, likes:0, comments:0},
+  {id:'A2026-006', title:'2025年度党建工作总结与2026年工作要点', type:'党建要闻', level:'党委', author:'钱*（宣传委员）', org:'中共XX街道党工委', status:'已驳回', top:0, carousel:0, push:'', schedule:'', publishTime:'', summary:'年度总结初稿，退回补充数据。', content:'初稿缺少量化指标完成对照表，退回补充后重新提交审核。', views:0, likes:0, comments:0},
+  {id:'A2026-007', title:'流动党员"云端"主题党课开讲', type:'基层动态', level:'支部', author:'孙*（组织委员）', org:'中共XX街道机关支部', status:'草稿', top:0, carousel:0, push:'', schedule:'', publishTime:'', summary:'依托线上平台组织流动党员参加党课。', content:'通过视频会议形式，确保流动党员离乡不离学、流动不流失。', views:0, likes:0, comments:0},
+  {id:'A2026-008', title:'街道"两优一先"表彰名单公示', type:'通知公告', level:'党委', author:'钱*（宣传委员）', org:'中共XX街道党工委', status:'已发布', top:1, carousel:1, push:'', schedule:'', publishTime:'2026-06-30 17:00', summary:'表彰先进基层党组织、优秀共产党员和优秀党务工作者。', content:'经民主推荐、组织考察、会议研究，确定表彰名单，现予以公示，公示期5个工作日。', views:2640, likes:310, comments:45}
+];
+
+var HONORS = [
+  {id:'H2026-001', title:'机关支部：以"党建+网格"激活基层治理', type:'先进党支部', subject:'中共XX街道机关支部', org:'中共XX街道机关支部', cover:'支部活动合影', honorDesc:'机关支部将党小组建在网格上，党员认领民情诉求，年度办结民生实事37件，群众满意度98%。', likes:128, status:'展示中', comments:[{user:'李*', text:'支部工作做得扎实！', status:'已展示', time:'2026-03-10'},{user:'周*', text:'向先进学习', status:'已展示', time:'2026-03-11'},{user:'匿名', text:'这广告太假', status:'待审核', time:'2026-03-12'}]},
+  {id:'H2026-002', title:'优秀党员张伟：二十年如一日守护社区平安', type:'优秀党员', subject:'张伟', org:'中共XX街道机关支部', cover:'张伟工作照', honorDesc:'张伟同志牵头组建社区义务巡逻队，二十年风雨无阻，累计调解邻里纠纷200余起，获评市级"平安卫士"。', likes:256, status:'展示中', comments:[{user:'王*', text:'张叔是我们学习的榜样', status:'已展示', time:'2026-03-08'},{user:'用户A', text:'垃圾内容', status:'待审核', time:'2026-03-13'}]},
+  {id:'H2026-003', title:'优秀党员李强：乡村振兴一线的"排头兵"', type:'优秀党员', subject:'李强', org:'XX村党支部', cover:'李强在田间', honorDesc:'李强返乡创业带动56户农户发展特色种植，户均增收1.2万元，获评县"最美返乡党员"。', likes:189, status:'展示中', comments:[{user:'赵*', text:'年轻人好样的', status:'已展示', time:'2026-03-09'}]}
+];
+
+var RED = [
+  {id:'R001', category:'基地展馆', title:'XX革命纪念馆（线上展馆）', era:'', desc:'数字孪生展馆，沉浸式回顾本地革命斗争史。', link:'线上展馆入口', views:1520, color:'red'},
+  {id:'R002', category:'基地展馆', title:'XX烈士陵园 VR 全景', era:'', desc:'720°全景缅怀英烈，支持献花与留言。', link:'VR全景入口', views:980, color:'red'},
+  {id:'R003', category:'党史知识库', title:'中国共产党简史（知识图谱）', era:'1921-至今', desc:'以知识图谱串联重大事件、会议与人物。', link:'阅读', views:2310, color:'blue'},
+  {id:'R004', category:'党史知识库', title:'历次党代会要点汇编', era:'1921-2022', desc:'一大至二十大的主题、成果与时间线对照。', link:'阅读', views:1740, color:'blue'},
+  {id:'R005', category:'革命人物', title:'李大钊：中国共产主义运动的先驱', era:'1889-1927', desc:'播火者，系统介绍马克思主义，促成一大召开。', link:'阅读', views:1450, color:'gold'},
+  {id:'R006', category:'革命人物', title:'方志敏：清贫铸就忠诚', era:'1899-1935', desc:'《可爱的中国》作者，坚贞不屈的革命烈士。', link:'阅读', views:1120, color:'gold'},
+  {id:'R007', category:'党史时间轴', title:'1921 中共一大 上海→嘉兴', era:'1921', desc:'中国共产党正式成立，中国革命面貌焕然一新。', link:'查看', views:1980, color:'green'},
+  {id:'R008', category:'党史时间轴', title:'1949 新中国成立', era:'1949', desc:'中国人民从此站起来了，开启历史新纪元。', link:'查看', views:2200, color:'green'}
+];
+
+var TAB_CRUMB = { portal:'党建资讯门户', honor:'党建风采展示', red:'红色教育资源' };
+var RED_TIMELINE = RED.filter(function(r){ return r.category==='党史时间轴'; }).sort(function(a,b){ return (+a.era) - (+b.era); });
+
+/* ============ 工具 ============ */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function statusTag(st){
+  var m = { '草稿':'gray','待审核':'orange','已发布':'green','已驳回':'red' };
+  return '<span class="tag '+ (m[st]||'gray') +'">'+ esc(st) +'</span>';
+}
+function showToast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); }, 1800); }
+function openDrawer(id){ $(id).classList.add('open'); }
+function closeDrawer(id){ $(id).classList.remove('open'); }
+function openModal(id){ $(id).classList.add('open'); }
+function closeModal(id){ $(id).classList.remove('open'); }
+function kv(k,v){ return '<div class="kv-row"><div class="k">'+esc(k)+'</div><div class="v">'+ (v||'—') +'</div></div>'; }
+
+/* ============ 导航 ============ */
+function toggleNavGroup(el){ el.closest('.nav-group').classList.toggle('collapsed'); }
+function navLeaf(el){
+  document.querySelectorAll('.nav-sub .nav-item.active').forEach(function(n){ n.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+/* ============ 子标签路由 ============ */
+function switchSub(key){
+  ['portal','honor','red'].forEach(function(k){
+    $('panel-'+k).classList.toggle('hidden', k!==key);
+    $('st-'+k).classList.toggle('active', k===key);
+  });
+  // 同步侧栏 active
+  document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var map = { portal:'13-宣传与思想阵地.html#portal', honor:'13-宣传与思想阵地.html#honor', red:'13-宣传与思想阵地.html#red' };
+  document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){
+    if(n.getAttribute('href')===map[key]) n.classList.add('active');
+  });
+  $('crumbActive').textContent = TAB_CRUMB[key];
+  if(location.hash !== '#'+key) history.replaceState(null,'','#'+key);
+  if(key==='portal') renderPortal();
+  if(key==='honor') renderHonor();
+  if(key==='red') renderRed();
+}
+
+/* ============ KPI ============ */
+function renderKpi(){
+  var published = ARTICLES.filter(function(a){ return a.status==='已发布'; }).length;
+  var pending = ARTICLES.filter(function(a){ return a.status==='待审核'; }).length;
+  var views = ARTICLES.reduce(function(s,a){ return s + (a.views||0); }, 0);
+  var likes = HONORS.reduce(function(s,h){ return s + (h.likes||0); }, 0);
+  $('kpis').innerHTML =
+    '<div class="kpi"><div class="lbl">已发布资讯</div><div class="num green">'+ published +'</div><div class="trend">累计稿件 '+ ARTICLES.length +' 篇</div></div>'+
+    '<div class="kpi"><div class="lbl">待审核稿件</div><div class="num orange">'+ pending +'</div><div class="trend">需党委宣传审核</div></div>'+
+    '<div class="kpi"><div class="lbl">资讯累计浏览</div><div class="num blue">'+ views.toLocaleString() +'</div><div class="trend">门户总触达</div></div>'+
+    '<div class="kpi"><div class="lbl">风采获赞</div><div class="num gold">'+ likes +'</div><div class="trend">先进典型 '+ HONORS.length +' 个</div></div>';
+}
+
+/* ============ 子标签① 资讯门户 ============ */
+function renderPortal(){
+  var ft = $('fType').value, fs = $('fStatus').value, kw = $('fKw').value.trim();
+  var list = ARTICLES.filter(function(a){
+    if(ft && a.type!==ft) return false;
+    if(fs && a.status!==fs) return false;
+    if(kw && (a.title+a.author+a.org).indexOf(kw)===-1) return false;
+    return true;
+  });
+  $('articleTotal').textContent = list.length;
+  $('articleCount').textContent = '显示第 1-'+ list.length +' 条';
+  if(list.length===0){ $('articleBody').innerHTML = '<tr><td colspan="9" class="empty">无匹配稿件</td></tr>'; return; }
+  $('articleBody').innerHTML = list.map(function(a){
+    var badges = (a.top? '<span class="tag red">置顶</span> ' : '') + (a.carousel? '<span class="tag gold">轮播</span>' : '');
+    var ops = '';
+    if(a.status==='待审核'){ ops += '<button class="btn btn-primary btn-sm" onclick="reviewArticle(\''+a.id+'\',\'pass\')">审核发布</button> '; ops += '<button class="btn btn-danger btn-sm" onclick="reviewArticle(\''+a.id+'\',\'reject\')">驳回</button>'; }
+    else if(a.status==='已发布'){ ops += '<button class="btn btn-secondary btn-sm" onclick="toggleTop(\''+a.id+'\')">'+(a.top?'取消置顶':'置顶')+'</button> '; ops += '<button class="btn btn-secondary btn-sm" onclick="toggleCarousel(\''+a.id+'\')">'+(a.carousel?'取消轮播':'轮播')+'</button> '; ops += '<button class="btn btn-ghost btn-sm" onclick="recallArticle(\''+a.id+'\')">撤回</button>'; }
+    else { ops += '<button class="btn btn-secondary btn-sm" onclick="openArticle(\''+a.id+'\')">编辑</button>'; }
+    return '<tr>'+
+      '<td><a class="btn-ghost" style="padding:0" onclick="openArticle(\''+a.id+'\')">'+ esc(a.title) +'</a></td>'+
+      '<td>'+ esc(a.type) +'</td>'+
+      '<td>'+ esc(a.level) +'</td>'+
+      '<td>'+ statusTag(a.status) +'</td>'+
+      '<td>'+(badges||'<span class="muted">—</span>')+'</td>'+
+      '<td class="mono">'+ (a.views||0).toLocaleString() +'</td>'+
+      '<td class="mono">'+ (a.likes||0) +'</td>'+
+      '<td class="mono">'+(a.publishTime||'<span class="muted">—</span>')+'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function findArticle(id){ return ARTICLES.find(function(a){ return a.id===id; }); }
+
+function reviewArticle(id, action){
+  var a = findArticle(id); if(!a) return;
+  if(action==='pass'){
+    a.status='已发布'; a.publishTime = (new Date()).toISOString().slice(0,10).replace(/-/g,'-') + ' ' + ('0'+new Date().getHours()).slice(-2) + ':' + ('0'+new Date().getMinutes()).slice(-2);
+    showToast('已审核发布：'+ a.title);
+  } else {
+    a.status='已驳回'; showToast('已驳回：'+ a.title);
+  }
+  renderPortal(); renderKpi();
+}
+function recallArticle(id){
+  var a = findArticle(id); if(!a) return;
+  a.status='草稿'; a.publishTime=''; a.top=0; a.carousel=0;
+  showToast('已撤回为草稿：'+ a.title); renderPortal(); renderKpi();
+}
+function toggleTop(id){ var a=findArticle(id); a.top = a.top?0:1; showToast(a.top?'已置顶':'已取消置顶'); renderPortal(); }
+function toggleCarousel(id){ var a=findArticle(id); a.carousel = a.carousel?0:1; showToast(a.carousel?'已加入轮播':'已取消轮播'); renderPortal(); }
+
+function openArticle(id){
+  var a = findArticle(id); if(!a) return;
+  $('articleDTitle').textContent = a.title;
+  var canEdit = (a.level!=='上级下推');
+  var body = '';
+  body += kv('稿件类型', a.type);
+  body += kv('发布层级', a.level + (a.level==='上级下推'?'（只读·上级下发）':''));
+  body += kv('作者 / 组织', a.author + ' / ' + a.org);
+  body += kv('状态', statusTag(a.status));
+  body += '<div class="kv-row"><div class="k">发布设置</div><div class="v">'+ (a.top?'置顶 ':'') + (a.carousel?'轮播 ':'') + (a.push?('定向：'+a.push):'') + (a.schedule?('定时：'+a.schedule):'') + (a.top||a.carousel||a.push||a.schedule?'':'—') +'</div></div>';
+  body += kv('发布时间', a.publishTime || '—');
+  body += '<div class="kv-row col"><div class="k">摘要</div><div class="v">'+ esc(a.summary) +'</div></div>';
+  body += '<div class="kv-row col"><div class="k">正文</div><div class="v" style="line-height:1.7">'+ esc(a.content) +'</div></div>';
+  body += '<div class="kv-row"><div class="k">互动统计</div><div class="v">浏览 '+ (a.views||0).toLocaleString() +' · 点赞 '+ (a.likes||0) +' · 评论 '+ (a.comments||0) +'</div></div>';
+  if(a.status==='待审核' && canEdit){
+    body += '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn btn-primary" onclick="reviewArticle(\''+a.id+'\',\'pass\');closeDrawer(\'articleDrawer\')">审核发布</button><button class="btn btn-danger" onclick="reviewArticle(\''+a.id+'\',\'reject\');closeDrawer(\'articleDrawer\')">驳回</button></div>';
+  }
+  $('articleDbody').innerHTML = body;
+  openDrawer('articleDrawer');
+}
+
+function openNewArticle(){
+  $('naType').value='党建要闻'; $('naLevel').value='支部';
+  $('naTitle').value=''; $('naSummary').value=''; $('naContent').value='';
+  $('naTop').value='0'; $('naCarousel').value='0'; $('naPush').value=''; $('naSchedule').value='';
+  $('naHint').style.display='none';
+  openModal('newArticleModal');
+}
+function submitNewArticle(mode){
+  var title=$('naTitle').value.trim(), type=$('naType').value, level=$('naLevel').value;
+  if(!title){ $('naHint').style.display='block'; $('naHint').className='check-result block'; $('naHint').textContent='请填写标题'; return; }
+  var id = 'A2026-' + (String(ARTICLES.length+10));
+  var a = { id:id, title:title, type:type, level:level, author:'钱*（宣传委员）', org:'中共XX街道机关支部', status:(mode==='review'?'待审核':'草稿'), top:(+$('naTop').value), carousel:(+$('naCarousel').value), push:$('naPush').value.trim(), schedule:$('naSchedule').value.replace('T',' '), publishTime:'', summary:$('naSummary').value.trim(), content:$('naContent').value.trim(), views:0, likes:0, comments:0 };
+  ARTICLES.unshift(a);
+  closeModal('newArticleModal');
+  showToast(mode==='review'?'已提交审核':'已存为草稿');
+  renderPortal(); renderKpi();
+}
+
+function exportPortal(){ showToast('门户发布台账已导出（原型演示）'); }
+
+/* ============ 子标签② 风采展示 ============ */
+function renderHonor(){
+  var ft = $('fHType').value, kw = $('fHKw').value.trim();
+  var list = HONORS.filter(function(h){
+    if(ft && h.type!==ft) return false;
+    if(kw && (h.title+h.subject+h.org).indexOf(kw)===-1) return false;
+    return true;
+  });
+  if(list.length===0){ $('honorGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">无匹配风采</div>'; return; }
+  $('honorGrid').innerHTML = list.map(function(h){
+    var coverColor = h.type==='先进党支部' ? 'red' : 'gold';
+    var pending = h.comments.filter(function(c){ return c.status==='待审核'; }).length;
+    return '<div class="tile">'+
+      '<div class="cover '+coverColor+'">'+ esc(h.cover||h.type) +'</div>'+
+      '<div class="tb-pad">'+
+        '<h3>'+ esc(h.title) +'</h3>'+
+        '<div class="chips"><span class="tag '+(h.type==='先进党支部'?'red':'gold')+'">'+ esc(h.type) +'</span><span class="muted">'+ esc(h.subject) +'</span></div>'+
+        '<div class="ds">'+ esc(h.honorDesc) +'</div>'+
+        '<div class="tb-foot"><span>'+ (h.comments.length) +' 条评论'+(pending?' · <span style="color:var(--state-orange-text)">'+pending+' 待审</span>':'') +'</span>'+
+        '<span class="like" onclick="likeHonor(\''+h.id+'\')">♥ '+ (h.likes||0) +'</span></div>'+
+        '<button class="btn btn-secondary btn-sm" style="align-self:flex-start" onclick="openHonor(\''+h.id+'\')">查看与审核评论</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function likeHonor(id){
+  var h = HONORS.find(function(x){ return x.id===id; }); if(!h) return;
+  h.likes = (h.likes||0) + 1; renderHonor(); renderKpi();
+}
+
+function openHonor(id){
+  var h = HONORS.find(function(x){ return x.id===id; }); if(!h) return;
+  $('honorDTitle').textContent = h.title;
+  var body = '';
+  body += kv('风采类型', h.type);
+  body += kv('对象名称', h.subject);
+  body += kv('所属组织', h.org);
+  body += kv('展示状态', h.status);
+  body += '<div class="kv-row col"><div class="k">事迹描述</div><div class="v" style="line-height:1.7">'+ esc(h.honorDesc) +'</div></div>';
+  body += kv('累计获赞', '♥ ' + (h.likes||0));
+  // 评论审核
+  body += '<div class="kv-row col"><div class="k">评论审核（需审核后展示）</div><div class="v" style="width:100%">';
+  body += '<div class="audit-list">';
+  h.comments.forEach(function(c, i){
+    var badge = c.status==='待审核' ? '<span class="tag orange">待审核</span>' : '<span class="tag green">已展示</span>';
+    body += '<div class="audit-item"><div class="ai-main"><div class="nm">'+ esc(c.user) +' '+ badge +'</div><div class="ds">'+ esc(c.text) +' · '+ esc(c.time) +'</div></div>';
+    if(c.status==='待审核'){ body += '<div class="ai-act"><button class="btn btn-primary btn-sm" onclick="reviewComment(\''+h.id+'\','+i+',\'pass\')">通过</button><button class="btn btn-danger btn-sm" onclick="reviewComment(\''+h.id+'\','+i+',\'del\')">删除</button></div>'; }
+    body += '</div>';
+  });
+  if(h.comments.length===0) body += '<div class="empty">暂无评论</div>';
+  body += '</div></div></div>';
+  // 新增评论（党员提交 → 待审核）
+  body += '<div class="field" style="margin-top:4px"><label>以党员身份发表评论（提交后待审核）</label><div style="display:flex;gap:8px"><input id="newComment" placeholder="输入评论内容"><button class="btn btn-primary btn-sm" onclick="addComment(\''+h.id+'\')">提交</button></div></div>';
+  $('honorDbody').innerHTML = body;
+  openDrawer('honorDrawer');
+}
+
+function reviewComment(hid, idx, action){
+  var h = HONORS.find(function(x){ return x.id===hid; }); if(!h) return;
+  if(action==='pass'){ h.comments[idx].status='已展示'; showToast('评论已通过并展示'); }
+  else { h.comments.splice(idx,1); showToast('评论已删除'); }
+  openHonor(hid); renderHonor();
+}
+function addComment(hid){
+  var h = HONORS.find(function(x){ return x.id===hid; }); if(!h) return;
+  var v = $('newComment').value.trim(); if(!v){ showToast('请输入评论内容'); return; }
+  h.comments.push({ user:'我（党员）', text:v, status:'待审核', time:(new Date()).toISOString().slice(0,10) });
+  showToast('评论已提交，等待审核'); openHonor(hid); renderHonor();
+}
+
+function openNewHonor(){
+  $('nhType').value='先进党支部'; $('nhSubject').value=''; $('nhOrg').value=''; $('nhCover').value=''; $('nhDesc').value='';
+  openModal('newHonorModal');
+}
+function submitNewHonor(){
+  var subject=$('nhSubject').value.trim(), type=$('nhType').value;
+  if(!subject){ showToast('请填写对象名称'); return; }
+  var id='H2026-'+(String(HONORS.length+10));
+  HONORS.unshift({ id:id, title:(subject+'：'+$('nhDesc').value.trim().slice(0,12)+(type==='优秀党员'?'':'支部经验')), type:type, subject:subject, org:$('nhOrg').value.trim()||'中共XX街道机关支部', cover:$('nhCover').value.trim()||type, honorDesc:$('nhDesc').value.trim(), likes:0, status:'展示中', comments:[] });
+  closeModal('newHonorModal'); showToast('风采已报送并展示'); renderHonor(); renderKpi();
+}
+
+/* ============ 子标签③ 红色资源 ============ */
+function renderRed(){
+  var fc = $('fRCat').value, kw = $('fRKw').value.trim();
+  var list = RED.filter(function(r){
+    if(fc && r.category!==fc) return false;
+    if(kw && (r.title+r.era+r.desc).indexOf(kw)===-1) return false;
+    return true;
+  });
+  if(list.length===0){ $('redGrid').innerHTML = '<div class="empty" style="grid-column:1/-1">无匹配资源</div>'; return; }
+  $('redGrid').innerHTML = list.map(function(r){
+    return '<div class="tile">'+
+      '<div class="cover '+ (r.color||'blue') +'">'+ esc(r.category) +'</div>'+
+      '<div class="tb-pad">'+
+        '<h3>'+ esc(r.title) +'</h3>'+
+        '<div class="chips"><span class="tag blue">'+ esc(r.category) +'</span>'+(r.era?'<span class="muted">'+esc(r.era)+'</span>':'')+'</div>'+
+        '<div class="ds">'+ esc(r.desc) +'</div>'+
+        '<div class="tb-foot"><span class="muted">浏览 '+ (r.views||0).toLocaleString() +'</span><a class="btn-ghost btn-sm" style="padding:0" onclick="showToast(\''+esc(r.link)+'（原型演示）\')">'+ esc(r.link) +' →</a></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  // 时间轴始终按时间轴类数据渲染
+  renderRedTimeline();
+}
+function renderRedTimeline(){
+  $('redTimeline').innerHTML = RED_TIMELINE.map(function(r){
+    return '<div class="tl-item"><div class="tl-yr">'+ esc(r.era) +'</div><div class="tl-t">'+ esc(r.title) +'</div><div class="tl-d">'+ esc(r.desc) +'</div></div>';
+  }).join('');
+}
+
+/* ============ 初始化 ============ */
+function init(){
+  renderKpi();
+  var key = (location.hash||'#portal').replace('#','');
+  if(!TAB_CRUMB[key]) key='portal';
+  switchSub(key);
+}
+window.addEventListener('hashchange', function(){ var k=(location.hash||'#portal').replace('#',''); if(TAB_CRUMB[k]) switchSub(k); });
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

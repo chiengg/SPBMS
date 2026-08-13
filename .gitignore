@@ -1,0 +1,15 @@
+# ===== Build artifacts =====
+.next/
+out/
+node_modules/
+*.tsbuildinfo
+
+# ===== OS / editor cruft =====
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# ===== Local memory / machine-specific (do NOT publish) =====
+.workbuddy/

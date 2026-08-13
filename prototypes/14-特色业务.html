@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>特色业务 · 党建管理系统</title>
+<!--
+  页面：14 特色业务（PRD 3.8 · PC · 特色业务分组主页）
+  设计系统：复用 设计令牌 的 :root 变量块；与 08/10/11/12/13 同构（侧栏/卡片/表格/抽屉/模态）。
+  结构（主区 5 个子标签）：
+    ① 双报到双服务（3.8.1）：在职党员社区报到台账 + 社区服务任务认领 + 社区评价反馈 + 服务时长同步计入积分
+    ② 志愿服务（3.8.2）：志愿项目发布/党员报名/服务打卡累计时长/星级志愿者评定
+    ③ 我为群众办实事（3.8.3）：民生实事申报/进度跟踪/成效评估/群众满意度评价
+    ④ 党建+业务融合（3.8.4）：党员先锋岗/责任区/攻坚项目认领 + 党建引领业务数据看板（党建指标+生产经营指标联动）
+    ⑤ 党建品牌创建（3.8.5）：支部品牌申报/材料上传/上级评审/品牌展示/成效跟踪全流程
+  权限（推荐方案）：支部管理员发起本层级双报到/志愿/实事/品牌；党委统筹评审与认定；服务时长/成效同步计入积分与考核。
+  交互：报到评价、志愿服务发布/报名/打卡、实事申报/进度/满意度、融合认领/结项、品牌申报/评审，hash 路由。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2; --state-gray-text: #4B5563; --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 520px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+
+/* 外壳 */
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-sub .nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+
+/* 子标签（主区） */
+.sub-tabs { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; align-self: flex-start; flex-wrap: wrap; }
+.sub-tab { height: 32px; padding: 0 16px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: all .12s ease; }
+.sub-tab:hover { color: var(--text-primary); background: var(--bg-page); }
+.sub-tab.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.tab-panel { display: flex; flex-direction: column; gap: var(--card-gap); }
+.tab-panel.hidden { display: none; }
+
+/* 按钮 / tag */
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-primary:disabled { background: var(--state-gray-dot); cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.btn-danger { background: #fff; color: var(--state-red-text); border-color: var(--state-red-bg); } .btn-danger:hover { background: var(--state-red-bg); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); }
+.tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); }
+.tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gold { background: #FCF2DD; color: #9A6B12; }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); gap: 10px; flex-wrap: wrap; }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-5); display: flex; flex-direction: column; gap: 6px; }
+.kpi .lbl { font-size: var(--fs-caption); color: var(--text-secondary); }
+.kpi .num { font-size: var(--fs-flip); font-weight: 700; line-height: 1; font-family: var(--font-num); }
+.kpi .num.red { color: var(--brand-red); } .kpi .num.blue { color: var(--brand-blue); } .kpi .num.green { color: var(--state-green); } .kpi .num.gold { color: var(--brand-gold); }
+.kpi .trend { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+/* 流程步骤条 */
+.flow-strip { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+.flow-step { flex: 1; min-width: 92px; text-align: center; position: relative; }
+.flow-step .fs-dot { width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 6px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--state-gray-dot); position: relative; z-index: 1; }
+.flow-step.done .fs-dot { background: var(--state-green); }
+.flow-step.cur .fs-dot { background: var(--brand-red); box-shadow: 0 0 0 3px rgba(194,31,48,0.18); }
+.flow-step .fs-name { font-size: 12px; font-weight: 600; }
+.flow-step .fs-d { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.flow-step::before { content: ""; position: absolute; top: 12px; left: -50%; width: 100%; height: 2px; background: var(--border-color); z-index: 0; }
+.flow-step:first-child::before { display: none; }
+.flow-step.done::before, .flow-step.cur::before { background: var(--state-green); }
+
+/* 筛选区 */
+.filters { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.filters select, .filters input { height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 10px; font-size: 13px; background: var(--bg-card); color: var(--text-primary); }
+.filters input { min-width: 160px; }
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table.tb { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.tb thead th { text-align: left; padding: 10px var(--space-4); background: var(--bg-page); color: var(--text-secondary); font-weight: 600; font-size: var(--fs-caption); border-bottom: 1px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; }
+table.tb tbody td { padding: 11px var(--space-4); border-bottom: 1px solid var(--border-light); vertical-align: middle; white-space: nowrap; }
+table.tb tbody tr:hover { background: var(--bg-page); }
+table.tb tbody td .name-cell { display: flex; align-items: center; gap: 8px; }
+table.tb tbody td .name-cell .av { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; flex: none; }
+.mono { font-family: var(--font-num); }
+.muted { color: var(--text-secondary); font-size: 12px; }
+.pager { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); font-size: var(--fs-caption); color: var(--text-secondary); }
+.pager .pg-btn { height: 28px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; font-size: 13px; }
+.pager .pg-btn:disabled { color: var(--state-gray-dot); cursor: not-allowed; }
+
+/* 通用 kv */
+.kv-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: var(--fs-body); }
+.kv-row .k { color: var(--text-secondary); min-width: 96px; flex: none; }
+.kv-row .v { color: var(--text-primary); font-weight: 500; }
+.kv-row.col { flex-direction: column; align-items: flex-start; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* 卡片网格（融合看板/品牌展示） */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--card-gap); }
+.tile { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .14s ease, transform .14s ease; }
+.tile:hover { box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+.tile .cover { height: 120px; background: linear-gradient(135deg, var(--brand-red), #8E1623); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; padding: 0 12px; text-align: center; }
+.tile .cover.blue { background: linear-gradient(135deg, var(--brand-blue), #1E4E8C); }
+.tile .cover.gold { background: linear-gradient(135deg, var(--brand-gold), #9A6B12); }
+.tile .cover.green { background: linear-gradient(135deg, var(--state-green), #1F6B41); }
+.tile .tb-pad { padding: var(--space-4); display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.tile .tb-pad h3 { font-size: 14px; font-weight: 600; line-height: 1.4; }
+.tile .tb-pad .ds { font-size: 12px; color: var(--text-secondary); flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.tile .tb-foot { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary); }
+
+/* 看板指标 */
+.board { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.board .bd { background: linear-gradient(135deg, var(--screen-card), var(--screen-panel)); border: 1px solid var(--screen-border); border-radius: var(--radius-md); padding: var(--space-5); color: var(--screen-text); }
+.board .bd .lbl { font-size: 12px; color: var(--screen-text-sub); }
+.board .bd .num { font-size: 30px; font-weight: 700; margin-top: 6px; font-family: var(--font-num); }
+.board .bd .trend { font-size: 12px; color: var(--screen-text-muted); margin-top: 4px; }
+
+/* 抽屉 */
+.drawer-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.42); display: none; z-index: 300; }
+.drawer-mask.open { display: block; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: var(--aside-width); max-width: 94vw; background: var(--bg-card); box-shadow: var(--shadow-md); transform: translateX(100%); transition: transform .24s ease; z-index: 301; display: flex; flex-direction: column; }
+.drawer-mask.open .drawer { transform: translateX(0); }
+.drawer .dh { height: var(--topbar-height); display: flex; align-items: center; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-color); gap: 10px; }
+.drawer .dh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.drawer .dh .x { width: 32px; height: 32px; border: none; background: transparent; border-radius: var(--radius-md); display: grid; place-items: center; color: var(--text-secondary); }
+.drawer .dh .x:hover { background: var(--bg-page); }
+.drawer .db { flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.45); display: none; align-items: center; justify-content: center; z-index: 400; padding: var(--space-4); }
+.modal-mask.open { display: flex; }
+.modal { width: 600px; max-width: 100%; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; animation: pop .18s ease; }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal .mh { display: flex; align-items: center; padding: var(--space-5); border-bottom: 1px solid var(--border-light); }
+.modal .mh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.modal .mb { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.modal .mf { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-light); background: var(--bg-page); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 600; }
+.field select, .field textarea, .field input { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 10px; font-size: var(--fs-body); font-family: inherit; background: #fff; color: var(--text-primary); }
+.field textarea { min-height: 80px; resize: vertical; }
+.field select:focus, .field textarea:focus, .field input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.hidden { display: none !important; }
+.check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+
+/* 审核列表 / 星级 */
+.audit-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.audit-item { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: 10px; }
+.audit-item .ai-main { flex: 1; min-width: 0; }
+.audit-item .ai-main .nm { font-weight: 600; }
+.audit-item .ai-main .ds { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.audit-item .ai-act { display: flex; gap: 8px; flex: none; }
+.star { color: var(--brand-gold); letter-spacing: 2px; font-size: 15px; }
+
+.warn-banner { display: flex; align-items: center; gap: 10px; background: var(--state-orange-bg); color: var(--state-orange-text); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; margin-bottom: var(--space-4); }
+.warn-banner svg { width: 18px; height: 18px; flex: none; }
+.check-result { border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; }
+.check-result.ok { background: var(--state-green-bg); color: var(--state-green-text); }
+.check-result.block { background: var(--state-red-bg); color: var(--state-red-text); }
+.empty { text-align: center; color: var(--text-secondary); padding: var(--space-6) 0; font-size: 13px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; transition: all .22s ease; z-index: 500; pointer-events: none; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="logo"><div class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.2 4.8L19 8.3l-3.5 3.4.9 4.9L12 14.6 7.6 16.6l.9-4.9L5 8.3l4.8-.5L12 3z" fill="#fff"/></svg></div><div class="t">智慧党建<small>党建管理系统</small></div></div>
+  <nav class="nav">
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">首页</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M15 14.5a4.5 4.5 0 019 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed" id="grp-relation">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 7h7v10H4zM13 7h7v10h-7M8 12h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 7l-3-3M17 17l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">关系变动管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#flow" onclick="navLeaf(this)">流动党员与党籍管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="ng-label">组织生活</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v4H4zM4 11h10v8H4zM16 11h4v8h-4" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M2 12h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-7 9 7M5 10v9h14v-9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">宣传与思想阵地</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="13-宣传与思想阵地.html#portal" onclick="navLeaf(this)">党建资讯门户</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#honor" onclick="navLeaf(this)">党建风采展示</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#red" onclick="navLeaf(this)">红色教育资源</a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">特色业务</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item active" href="14-特色业务.html#report" onclick="navLeaf(this)">双报到双服务</a>
+        <a class="nav-item" href="14-特色业务.html#vol" onclick="navLeaf(this)">志愿服务</a>
+        <a class="nav-item" href="14-特色业务.html#fact" onclick="navLeaf(this)">我为群众办实事</a>
+        <a class="nav-item" href="14-特色业务.html#fusion" onclick="navLeaf(this)">党建+业务融合</a>
+        <a class="nav-item" href="14-特色业务.html#brand" onclick="navLeaf(this)">党建品牌创建</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19 12a7 7 0 00-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 00-2.2-1.3L16 3H8l-.4 2.5A7 7 0 005.4 6.8l-2.3-1-2 3.4 2 1.5A7 7 0 003 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 002.2 1.3L8 21h8l.4-2.5a7 7 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="ng-label">系统管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="15-系统管理.html#role" onclick="navLeaf(this)">权限与角色管理</a>
+        <a class="nav-item" href="15-系统管理.html#msg" onclick="navLeaf(this)">消息中心</a>
+        <a class="nav-item" href="15-系统管理.html#export" onclick="navLeaf(this)">台账导出引擎</a>
+        <a class="nav-item" href="15-系统管理.html#config" onclick="navLeaf(this)">系统配置</a>
+        <a class="nav-item" href="15-系统管理.html#cert" onclick="navLeaf(this)">党员证明开具</a>
+      </div>
+    </div>
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<!-- ===== 主区 ===== -->
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">特色业务 <span>/</span> <b id="crumbActive">双报到双服务</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="globalSearch" placeholder="搜索党员 / 项目 / 品牌"></div>
+    <div class="top-actions">
+      <button class="icon-btn" title="待办"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.7 21a2 2 0 01-3.4 0" stroke="currentColor" stroke-width="2"/></svg><span class="dot">6</span></button>
+      <button class="icon-btn" title="消息"><svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16v12H7l-3 3V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+      <div class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 21V7l8-4 8 4v14" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>中共XX机关委员会</div>
+      <div class="user"><div class="avatar">张</div><div><div class="nm">张伟</div><div class="role">系统管理员</div></div></div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>特色业务</h1><div class="sub">拓展党建与业务融合场景 · PRD 3.8</div></div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpis" id="kpis"></div>
+
+    <!-- 子标签切换 -->
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="st-report" onclick="switchSub('report')">双报到双服务</button>
+      <button class="sub-tab" id="st-vol" onclick="switchSub('vol')">志愿服务</button>
+      <button class="sub-tab" id="st-fact" onclick="switchSub('fact')">我为群众办实事</button>
+      <button class="sub-tab" id="st-fusion" onclick="switchSub('fusion')">党建+业务融合</button>
+      <button class="sub-tab" id="st-brand" onclick="switchSub('brand')">党建品牌创建</button>
+    </div>
+
+    <!-- ============ 子标签① 双报到双服务 ============ -->
+    <div class="tab-panel" id="panel-report">
+      <div class="card">
+        <div class="card-h"><h2>在职党员社区报到台账</h2>
+          <div class="filters">
+            <select id="fReportStatus" onchange="renderReport()"><option value="">全部状态</option><option>已报到</option><option>待报到</option></select>
+            <input id="fReportKw" oninput="renderReport()" placeholder="搜索党员 / 社区">
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>党员</th><th>报到社区</th><th>报到时间</th><th>状态</th><th>认领任务</th><th>服务时长</th><th>社区评价</th><th>操作</th></tr></thead>
+            <tbody id="reportBody"></tbody>
+          </table></div>
+          <div class="pager"><span id="reportCount">显示 0 条</span></div>
+        </div>
+      </div>
+      <div class="warn-banner"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>社区服务时长审核通过后，按规则同步计入党员年度积分（与学时兑换标注同源，防止重复激励）。</div>
+    </div>
+
+    <!-- ============ 子标签② 志愿服务 ============ -->
+    <div class="tab-panel hidden" id="panel-vol">
+      <div class="card">
+        <div class="card-h"><h2>志愿项目台账</h2><button class="btn btn-primary btn-sm" onclick="openModal('volModal')">发布志愿项目</button></div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>项目名称</th><th>发布组织</th><th>服务时间</th><th>地点</th><th>时长</th><th>报名(已报/额)</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="volBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>星级志愿者评定</h2><div class="sub-note">按累计服务时长自动定级：≥50h 三星 / ≥20h 二星 / ≥5h 一星</div></div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>党员</th><th>累计服务时长</th><th>星级</th><th>状态</th></tr></thead>
+            <tbody id="starBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 子标签③ 我为群众办实事 ============ -->
+    <div class="tab-panel hidden" id="panel-fact">
+      <div class="card">
+        <div class="card-h"><h2>民生实事项目台账</h2><button class="btn btn-primary btn-sm" onclick="openModal('factModal')">申报实事项目</button></div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>实事项目</th><th>申报支部</th><th>进度</th><th>群众满意度</th><th>操作</th></tr></thead>
+            <tbody id="factBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 子标签④ 党建+业务融合 ============ -->
+    <div class="tab-panel hidden" id="panel-fusion">
+      <div class="board" id="fusionBoard"></div>
+      <div class="card">
+        <div class="card-h"><h2>党员先锋岗 / 责任区 / 攻坚项目</h2><button class="btn btn-primary btn-sm" onclick="openModal('fusionModal')">发布融合项目</button></div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>类型</th><th>项目名称</th><th>责任人</th><th>关联业务指标</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody id="fusionBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 子标签⑤ 党建品牌创建 ============ -->
+    <div class="tab-panel hidden" id="panel-brand">
+      <div class="card">
+        <div class="card-h"><h2>支部党建品牌台账</h2><button class="btn btn-primary btn-sm" onclick="openModal('brandModal')">申报党建品牌</button></div>
+        <div class="card-b">
+          <div class="table-wrap"><table class="tb">
+            <thead><tr><th>支部</th><th>品牌名称</th><th>状态</th><th>成效</th><th>操作</th></tr></thead>
+            <tbody id="brandBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+      <div class="grid" id="brandGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 抽屉：双报到详情 ===== -->
+<div class="drawer-mask" id="reportDrawer" onclick="if(event.target===this)closeDrawer('reportDrawer')">
+  <div class="drawer"><div class="dh"><h3 id="reportDrawerTitle">报到详情</h3><button class="x" onclick="closeDrawer('reportDrawer')">✕</button></div><div class="db" id="reportDrawerBody"></div></div>
+</div>
+<!-- ===== 抽屉：实事详情 ===== -->
+<div class="drawer-mask" id="factDrawer" onclick="if(event.target===this)closeDrawer('factDrawer')">
+  <div class="drawer"><div class="dh"><h3 id="factDrawerTitle">实事详情</h3><button class="x" onclick="closeDrawer('factDrawer')">✕</button></div><div class="db" id="factDrawerBody"></div></div>
+</div>
+<!-- ===== 抽屉：品牌详情 ===== -->
+<div class="drawer-mask" id="brandDrawer" onclick="if(event.target===this)closeDrawer('brandDrawer')">
+  <div class="drawer"><div class="dh"><h3 id="brandDrawerTitle">品牌详情</h3><button class="x" onclick="closeDrawer('brandDrawer')">✕</button></div><div class="db" id="brandDrawerBody"></div></div>
+</div>
+
+<!-- ===== 模态：发布志愿项目 ===== -->
+<div class="modal-mask" id="volModal" onclick="if(event.target===this)closeModal('volModal')">
+  <div class="modal"><div class="mh"><h3>发布志愿项目</h3><button class="x" onclick="closeModal('volModal')">✕</button></div>
+    <div class="mb">
+      <div class="field"><label>项目名称</label><input id="volName" placeholder="如：学雷锋志愿服务月"></div>
+      <div class="field-row">
+        <div class="field"><label>发布组织</label><input id="volOrg" placeholder="如：机关党委"></div>
+        <div class="field"><label>服务时间</label><input id="volTime" placeholder="2026-03-05"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>地点</label><input id="volPlace" placeholder="如：城区主干道"></div>
+        <div class="field"><label>单次时长(小时)</label><input id="volDur" type="number" value="4"></div>
+      </div>
+      <div class="field"><label>名额</label><input id="volQuota" type="number" value="20"></div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('volModal')">取消</button><button class="btn btn-primary" onclick="publishVol()">发布</button></div>
+  </div>
+</div>
+<!-- ===== 模态：申报实事 ===== -->
+<div class="modal-mask" id="factModal" onclick="if(event.target===this)closeModal('factModal')">
+  <div class="modal"><div class="mh"><h3>申报民生实事项目</h3><button class="x" onclick="closeModal('factModal')">✕</button></div>
+    <div class="mb">
+      <div class="field"><label>实事项目</label><input id="factTitle" placeholder="如：老旧小区路灯维修"></div>
+      <div class="field"><label>申报支部</label><input id="factBranch" placeholder="如：第一党支部"></div>
+      <div class="field"><label>预期成效</label><textarea id="factEffect" placeholder="简述预期成效"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('factModal')">取消</button><button class="btn btn-primary" onclick="applyFact()">提交申报</button></div>
+  </div>
+</div>
+<!-- ===== 模态：发布融合项目 ===== -->
+<div class="modal-mask" id="fusionModal" onclick="if(event.target===this)closeModal('fusionModal')">
+  <div class="modal"><div class="mh"><h3>发布党建+业务融合项目</h3><button class="x" onclick="closeModal('fusionModal')">✕</button></div>
+    <div class="mb">
+      <div class="field"><label>项目类型</label><select id="fusionType"><option>党员先锋岗</option><option>党员责任区</option><option>攻坚项目</option></select></div>
+      <div class="field"><label>项目名称</label><input id="fusionName" placeholder="如：生产一线技术攻坚岗"></div>
+      <div class="field-row">
+        <div class="field"><label>责任人</label><input id="fusionOwner" placeholder="如：李强"></div>
+        <div class="field"><label>关联业务指标</label><input id="fusionKpi" placeholder="如：良品率+3.2%"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('fusionModal')">取消</button><button class="btn btn-primary" onclick="publishFusion()">发布</button></div>
+  </div>
+</div>
+<!-- ===== 模态：申报品牌 ===== -->
+<div class="modal-mask" id="brandModal" onclick="if(event.target===this)closeModal('brandModal')">
+  <div class="modal"><div class="mh"><h3>申报党建品牌</h3><button class="x" onclick="closeModal('brandModal')">✕</button></div>
+    <div class="mb">
+      <div class="field"><label>申报支部</label><input id="brandBranch" placeholder="如：第一党支部"></div>
+      <div class="field"><label>品牌名称</label><input id="brandName" placeholder="如：红色管家·邻里守望"></div>
+      <div class="field"><label>品牌简介与预期成效</label><textarea id="brandEffect" placeholder="简述品牌内涵与预期成效"></textarea></div>
+      <div class="field"><label>支撑材料</label><input id="brandFile" placeholder="如：申报书.pdf / 活动照片.zip（上传）"></div>
+    </div>
+    <div class="mf"><button class="btn btn-secondary" onclick="closeModal('brandModal')">取消</button><button class="btn btn-primary" onclick="applyBrand()">提交申报</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var TAB_CRUMB = { report:'双报到双服务', vol:'志愿服务', fact:'我为群众办实事', fusion:'党建+业务融合', brand:'党建品牌创建' };
+var TOTAL_PARTY = 34, REPORTED = 32;
+
+/* ===== 数据 ===== */
+var REPORTS = [
+  {id:'R2026-001', member:'李强', community:'幸福路社区', reportTime:'2026-01-15', status:'已报到', taskCount:3, hours:18, eval:'优秀'},
+  {id:'R2026-002', member:'陈静', community:'和平里社区', reportTime:'2026-01-18', status:'已报到', taskCount:2, hours:12, eval:'良好'},
+  {id:'R2026-003', member:'王磊', community:'幸福路社区', reportTime:'2026-01-20', status:'已报到', taskCount:1, hours:6, eval:'待评价'},
+  {id:'R2026-004', member:'赵敏', community:'—', reportTime:'', status:'待报到', taskCount:0, hours:0, eval:'—'},
+  {id:'R2026-005', member:'孙浩', community:'滨河社区', reportTime:'2026-01-12', status:'已报到', taskCount:4, hours:24, eval:'优秀'},
+  {id:'R2026-006', member:'周倩', community:'和平里社区', reportTime:'2026-01-19', status:'已报到', taskCount:2, hours:9, eval:'良好'},
+  {id:'R2026-007', member:'吴磊', community:'—', reportTime:'', status:'待报到', taskCount:0, hours:0, eval:'—'},
+  {id:'R2026-008', member:'郑爽', community:'幸福路社区', reportTime:'2026-01-16', status:'已报到', taskCount:3, hours:15, eval:'优秀'}
+];
+var REPORT_TASKS = [
+  {id:'T001', reportId:'R2026-001', title:'社区环境整治', hours:6, status:'已完成', eval:'优秀'},
+  {id:'T002', reportId:'R2026-001', title:'独居老人陪聊', hours:6, status:'已完成', eval:'优秀'},
+  {id:'T003', reportId:'R2026-001', title:'政策宣传值守', hours:6, status:'已完成', eval:'优秀'},
+  {id:'T004', reportId:'R2026-002', title:'文明劝导', hours:6, status:'已完成', eval:'良好'},
+  {id:'T005', reportId:'R2026-002', title:'便民代购', hours:6, status:'服务中', eval:'待评价'},
+  {id:'T006', reportId:'R2026-003', title:'治安巡逻', hours:6, status:'已完成', eval:'良好'},
+  {id:'T007', reportId:'R2026-005', title:'河道保洁', hours:8, status:'已完成', eval:'优秀'},
+  {id:'T008', reportId:'R2026-005', title:'助农抢收', hours:8, status:'已完成', eval:'优秀'},
+  {id:'T009', reportId:'R2026-005', title:'社区义诊协助', hours:8, status:'已完成', eval:'优秀'}
+];
+
+var VOLUNTEERS = [
+  {id:'V2026-001', name:'学雷锋志愿服务月', org:'机关党委', time:'2026-03-05', place:'城区主干道', duration:4, quota:30, signed:22, status:'报名中'},
+  {id:'V2026-002', name:'敬老院关爱行动', org:'第一党支部', time:'2026-03-12', place:'夕阳红敬老院', duration:3, quota:20, signed:20, status:'执行中'},
+  {id:'V2026-003', name:'红色宣讲进社区', org:'第二党支部', time:'2026-02-28', place:'幸福路社区', duration:2, quota:15, signed:15, status:'已结束'},
+  {id:'V2026-004', name:'防汛应急演练', org:'机关党委', time:'2026-04-10', place:'滨河堤防', duration:5, quota:25, signed:11, status:'报名中'}
+];
+var STAR_VOLUNTEERS = [
+  {id:'S001', member:'李强', hours:42},
+  {id:'S002', member:'孙浩', hours:51},
+  {id:'S003', member:'陈静', hours:23},
+  {id:'S004', member:'郑爽', hours:30},
+  {id:'S005', member:'周倩', hours:9}
+];
+
+var FACTS = [
+  {id:'F2026-001', title:'老旧小区路灯维修', branch:'第一党支部', progress:'已完成', satisfaction:4.8, feedback:12},
+  {id:'F2026-002', title:'社区食堂助老餐', branch:'第二党支部', progress:'办理中', satisfaction:null, feedback:0},
+  {id:'F2026-003', title:'困难群众结对帮扶', branch:'机关党委', progress:'申报', satisfaction:null, feedback:0},
+  {id:'F2026-004', title:'便民服务驿站建设', branch:'第一党支部', progress:'办理中', satisfaction:null, feedback:0},
+  {id:'F2026-005', title:'留守儿童课业辅导', branch:'第二党支部', progress:'已完成', satisfaction:4.6, feedback:18}
+];
+
+var FUSION = [
+  {id:'J2026-001', type:'党员先锋岗', name:'生产一线技术攻坚岗', owner:'李强', kpi:'良品率+3.2%', status:'执行中'},
+  {id:'J2026-002', type:'党员责任区', name:'设备安全责任区', owner:'孙浩', kpi:'隐患整改率100%', status:'执行中'},
+  {id:'J2026-003', type:'攻坚项目', name:'年度降本增效攻坚', owner:'陈静', kpi:'节约成本120万', status:'认领中'},
+  {id:'J2026-004', type:'党员先锋岗', name:'客户服务示范岗', owner:'郑爽', kpi:'满意度98%', status:'已结项'}
+];
+
+var BRANDS = [
+  {id:'B2026-001', branch:'第一党支部', name:'红色管家·邻里守望', status:'已认定', effect:'覆盖3个小区，服务2000+居民'},
+  {id:'B2026-002', branch:'第二党支部', name:'青马学堂', status:'评审中', effect:'青年党员理论提升'},
+  {id:'B2026-003', branch:'机关党委', name:'党建+营商环境', status:'申报中', effect:'企业诉求办结率提升'},
+  {id:'B2026-004', branch:'第一党支部', name:'银龄先锋', status:'培育中', effect:'老党员发挥作用'}
+];
+
+/* ===== 工具 ===== */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function showToast(msg){ var t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(function(){ t.classList.remove('show'); }, 1800); }
+function openDrawer(id){ $(id).classList.add('open'); }
+function closeDrawer(id){ $(id).classList.remove('open'); }
+function openModal(id){ $(id).classList.add('open'); }
+function closeModal(id){ $(id).classList.remove('open'); }
+function kv(k,v){ return '<div class="kv-row"><div class="k">'+esc(k)+'</div><div class="v">'+ (v||'—') +'</div></div>'; }
+function statusTag(s){
+  var m = {'已报到':'green','待报到':'orange','报名中':'blue','执行中':'blue','已结束':'gray','已完成':'green','办理中':'blue','申报':'orange','认领中':'orange','已结项':'green','已认定':'green','评审中':'blue','培育中':'orange','优秀':'gold','良好':'green','待评价':'orange'};
+  return '<span class="tag '+(m[s]||'gray')+'">'+ esc(s) +'</span>';
+}
+function starOf(h){ if(h>=50) return '★★★'; if(h>=20) return '★★'; if(h>=5) return '★'; return '—'; }
+
+/* ===== 导航 ===== */
+function toggleNavGroup(el){ el.closest('.nav-group').classList.toggle('collapsed'); }
+function navLeaf(el){
+  document.querySelectorAll('.nav-sub .nav-item.active').forEach(function(n){ n.classList.remove('active'); });
+  el.classList.add('active');
+}
+
+/* ===== 子标签路由 ===== */
+function switchSub(key){
+  ['report','vol','fact','fusion','brand'].forEach(function(k){
+    $('panel-'+k).classList.toggle('hidden', k!==key);
+    $('st-'+k).classList.toggle('active', k===key);
+  });
+  document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var map = { report:'14-特色业务.html#report', vol:'14-特色业务.html#vol', fact:'14-特色业务.html#fact', fusion:'14-特色业务.html#fusion', brand:'14-特色业务.html#brand' };
+  document.querySelectorAll('.nav-sub .nav-item').forEach(function(n){ if(n.getAttribute('href')===map[key]) n.classList.add('active'); });
+  $('crumbActive').textContent = TAB_CRUMB[key];
+  if(location.hash !== '#'+key) history.replaceState(null,'','#'+key);
+  if(key==='report') renderReport();
+  if(key==='vol'){ renderVol(); renderStars(); }
+  if(key==='fact') renderFacts();
+  if(key==='fusion'){ renderFusion(); renderFusionBoard(); }
+  if(key==='brand'){ renderBrands(); renderBrandGrid(); }
+}
+
+/* ===== KPI ===== */
+function renderKpi(){
+  var volCount = VOLUNTEERS.length;
+  var doneFacts = FACTS.filter(function(f){ return f.progress==='已完成'; }).length;
+  var factRate = Math.round(doneFacts / FACTS.length * 100);
+  var brandOk = BRANDS.filter(function(b){ return b.status==='已认定'; }).length;
+  $('kpis').innerHTML =
+    '<div class="kpi"><div class="lbl">双报到覆盖率</div><div class="num green">'+ Math.round(REPORTED/TOTAL_PARTY*100) +'%</div><div class="trend">已报到 '+ REPORTED +' / 在职 '+ TOTAL_PARTY +' 人</div></div>'+
+    '<div class="kpi"><div class="lbl">在册志愿项目</div><div class="num blue">'+ volCount +'</div><div class="trend">累计报名 '+ VOLUNTEERS.reduce(function(s,v){return s+v.signed;},0) +' 人次</div></div>'+
+    '<div class="kpi"><div class="lbl">实事办结率</div><div class="num gold">'+ factRate +'%</div><div class="trend">已完成 '+ doneFacts +' / 共 '+ FACTS.length +' 项</div></div>'+
+    '<div class="kpi"><div class="lbl">党建品牌(已认定)</div><div class="num red">'+ brandOk +'</div><div class="trend">培育中 '+ BRANDS.filter(function(b){return b.status==='培育中';}).length +' 个</div></div>';
+}
+
+/* ===== 子标签① 双报到双服务 ===== */
+function renderReport(){
+  var fs = $('fReportStatus').value, kw = $('fReportKw').value.trim();
+  var list = REPORTS.filter(function(r){
+    if(fs && r.status!==fs) return false;
+    if(kw && (r.member+r.community).indexOf(kw)===-1) return false;
+    return true;
+  });
+  $('reportCount').textContent = '显示第 1-'+ list.length +' 条';
+  if(list.length===0){ $('reportBody').innerHTML = '<tr><td colspan="8" class="empty">无匹配报到记录</td></tr>'; return; }
+  $('reportBody').innerHTML = list.map(function(r){
+    var ops = '<button class="btn btn-secondary btn-sm" onclick="openReport(\''+r.id+'\')">查看</button>';
+    if(r.status==='已报到') ops += ' <button class="btn btn-ghost btn-sm" onclick="openReport(\''+r.id+'\')">评价反馈</button>';
+    return '<tr>'+
+      '<td><div class="name-cell"><span class="av">'+ r.member.charAt(0) +'</span>'+ esc(r.member) +'</div></td>'+
+      '<td>'+ (r.community==='—'?'<span class="muted">未报到</span>':esc(r.community)) +'</td>'+
+      '<td class="mono">'+(r.reportTime||'<span class="muted">—</span>')+'</td>'+
+      '<td>'+ statusTag(r.status) +'</td>'+
+      '<td class="mono">'+ r.taskCount +'</td>'+
+      '<td class="mono">'+ r.hours +' h</td>'+
+      '<td>'+ (r.eval==='—'?'<span class="muted">—</span>':esc(r.eval)) +'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function openReport(id){
+  var r = REPORTS.find(function(x){ return x.id===id; });
+  $('reportDrawerTitle').textContent = r.member + ' · 社区报到详情';
+  var tasks = REPORT_TASKS.filter(function(t){ return t.reportId===id; });
+  var body = kv('党员', r.member) + kv('报到社区', r.community==='—'?'未报到':r.community) + kv('报到时间', r.reportTime||'未报到') +
+    kv('报到状态', r.status) + kv('认领任务数', r.taskCount+' 项') + kv('累计服务时长', r.hours+' 小时') + kv('社区评价', r.eval);
+  body += '<div class="sub-note" style="margin-top:6px">认领的社区服务任务</div>';
+  if(tasks.length===0){ body += '<div class="empty">暂无认领任务</div>'; }
+  else {
+    body += '<div class="audit-list">';
+    tasks.forEach(function(t){
+      var btns = t.status==='已完成' && t.eval==='待评价'
+        ? '<button class="btn btn-ghost btn-sm" onclick="markEval(\''+id+'\',\''+t.id+'\',\'优秀\')">评优秀</button><button class="btn btn-ghost btn-sm" onclick="markEval(\''+id+'\',\''+t.id+'\',\'良好\')">评良好</button>'
+        : '<span class="muted">'+ (t.status==='已完成'?'已评价':'服务中') +'</span>';
+      body += '<div class="audit-item"><div class="ai-main"><div class="nm">'+ esc(t.title) +'</div><div class="ds">'+ t.hours +' 小时 · '+ statusTag(t.status) +'</div></div><div class="ai-act">'+ btns +'</div></div>';
+    });
+    body += '</div>';
+  }
+  body += '<div class="warn-banner" style="margin-top:12px"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>服务时长审核通过后将同步计入党员年度积分。</div>';
+  $('reportDrawerBody').innerHTML = body;
+  openDrawer('reportDrawer');
+}
+function markEval(reportId, taskId, level){
+  var t = REPORT_TASKS.find(function(x){ return x.id===taskId; });
+  if(t){ t.eval = level; }
+  // 重新计算该党员整体评价（取任务中最优）
+  var tasks = REPORT_TASKS.filter(function(x){ return x.reportId===reportId; });
+  var r = REPORTS.find(function(x){ return x.id===reportId; });
+  var done = tasks.filter(function(x){ return x.status==='已完成'; });
+  if(done.length>0){ r.eval = (done.some(function(x){return x.eval==='优秀';})?'优秀':'良好'); }
+  showToast('社区评价：'+ level + '，已同步计入积分');
+  openReport(reportId);
+}
+
+/* ===== 子标签② 志愿服务 ===== */
+function renderVol(){
+  $('volBody').innerHTML = VOLUNTEERS.map(function(v){
+    var ops = '';
+    if(v.status==='报名中'){ ops += '<button class="btn btn-primary btn-sm" onclick="signVol(\''+v.id+'\')">党员报名</button> '; }
+    else if(v.status==='执行中'){ ops += '<button class="btn btn-secondary btn-sm" onclick="clockVol(\''+v.id+'\')">服务打卡</button> '; }
+    else { ops += '<span class="muted">已结束</span>'; }
+    return '<tr>'+
+      '<td>'+ esc(v.name) +'</td>'+
+      '<td>'+ esc(v.org) +'</td>'+
+      '<td class="mono">'+ esc(v.time) +'</td>'+
+      '<td>'+ esc(v.place) +'</td>'+
+      '<td class="mono">'+ v.duration +' h</td>'+
+      '<td class="mono">'+ v.signed +'/'+ v.quota +'</td>'+
+      '<td>'+ statusTag(v.status) +'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function renderStars(){
+  // 合并 VOLUNTEERS 已报名与本表累计时长
+  var byMember = {};
+  STAR_VOLUNTEERS.forEach(function(s){ byMember[s.member] = (byMember[s.member]||0) + s.hours; });
+  VOLUNTEERS.forEach(function(v){
+    if(v.status!=='报名中'){ /* 报名中未实际服务不计 */ }
+  });
+  var rows = STAR_VOLUNTEERS.slice().sort(function(a,b){ return b.hours-a.hours; });
+  $('starBody').innerHTML = rows.map(function(s){
+    return '<tr><td><div class="name-cell"><span class="av">'+ s.member.charAt(0) +'</span>'+ esc(s.member) +'</div></td>'+
+      '<td class="mono">'+ s.hours +' h</td>'+
+      '<td><span class="star">'+ starOf(s.hours) +'</span></td>'+
+      '<td>'+ (s.hours>=50?'三星志愿者':s.hours>=20?'二星志愿者':s.hours>=5?'一星志愿者':'普通志愿者') +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function publishVol(){
+  var name = $('volName').value.trim(), org = $('volOrg').value.trim(), time = $('volTime').value.trim(),
+      place = $('volPlace').value.trim(), dur = parseInt($('volDur').value||'4',10), quota = parseInt($('volQuota').value||'20',10);
+  if(!name || !org || !time || !place){ showToast('请填写完整项目信息'); return; }
+  var id = 'V2026-' + (VOLUNTEERS.length+1<10?'0':'') + (VOLUNTEERS.length+1);
+  VOLUNTEERS.unshift({ id:id, name:name, org:org, time:time, place:place, duration:dur, quota:quota, signed:0, status:'报名中' });
+  closeModal('volModal');
+  renderVol(); renderKpi();
+  showToast('志愿项目已发布：'+ name);
+}
+function signVol(id){
+  var v = VOLUNTEERS.find(function(x){ return x.id===id; });
+  if(v.signed >= v.quota){ showToast('名额已满'); return; }
+  v.signed += 1;
+  renderVol(); renderKpi();
+  showToast('报名成功，当前 '+ v.signed +'/'+ v.quota);
+}
+function clockVol(id){
+  var v = VOLUNTEERS.find(function(x){ return x.id===id; });
+  v.status = '已结束';
+  // 累计到星级志愿者（演示：责任党员 + 时长）
+  renderVol(); renderStars();
+  showToast('打卡完成，服务时长 '+ v.duration +'h 已累计');
+}
+
+/* ===== 子标签③ 我为群众办实事 ===== */
+function renderFacts(){
+  $('factBody').innerHTML = FACTS.map(function(f){
+    var sat = f.satisfaction!=null ? '<span class="star">'+ '★'.repeat(Math.round(f.satisfaction)) +'</span> '+ f.satisfaction +' ('+ f.feedback +'评)' : '<span class="muted">待评价</span>';
+    var ops = '<button class="btn btn-secondary btn-sm" onclick="openFact(\''+f.id+'\')">查看</button> ';
+    if(f.progress==='申报') ops += '<button class="btn btn-primary btn-sm" onclick="advanceFact(\''+f.id+'\')">受理推进</button>';
+    else if(f.progress==='办理中') ops += '<button class="btn btn-primary btn-sm" onclick="advanceFact(\''+f.id+'\')">办结</button>';
+    else ops += '<button class="btn btn-ghost btn-sm" onclick="rateFact(\''+f.id+'\')">满意度评价</button>';
+    return '<tr>'+
+      '<td>'+ esc(f.title) +'</td>'+
+      '<td>'+ esc(f.branch) +'</td>'+
+      '<td>'+ statusTag(f.progress) +'</td>'+
+      '<td>'+ sat +'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function applyFact(){
+  var title = $('factTitle').value.trim(), branch = $('factBranch').value.trim(), effect = $('factEffect').value.trim();
+  if(!title || !branch){ showToast('请填写项目与申报支部'); return; }
+  var id = 'F2026-' + (FACTS.length+1<10?'0':'') + (FACTS.length+1);
+  FACTS.unshift({ id:id, title:title, branch:branch, progress:'申报', satisfaction:null, feedback:0 });
+  closeModal('factModal');
+  renderFacts(); renderKpi();
+  showToast('实事项目已申报：'+ title);
+}
+function advanceFact(id){
+  var f = FACTS.find(function(x){ return x.id===id; });
+  if(f.progress==='申报'){ f.progress='办理中'; showToast('已受理，进入办理中'); }
+  else if(f.progress==='办理中'){ f.progress='已完成'; showToast('已办结'); }
+  renderFacts(); renderKpi();
+}
+function rateFact(id){
+  var score = prompt('请输入群众满意度评分（1-5）：', '5');
+  if(score==null) return;
+  score = parseInt(score,10); if(isNaN(score)||score<1||score>5){ showToast('评分需在 1-5 之间'); return; }
+  var f = FACTS.find(function(x){ return x.id===id; });
+  f.feedback += 1;
+  f.satisfaction = f.satisfaction==null ? score : ((f.satisfaction*(f.feedback-1)+score)/f.feedback);
+  renderFacts(); renderKpi();
+  showToast('满意度已记录：'+ score +' 星');
+}
+function openFact(id){
+  var f = FACTS.find(function(x){ return x.id===id; });
+  $('factDrawerTitle').textContent = f.title;
+  var sat = f.satisfaction!=null ? '<span class="star">'+ '★'.repeat(Math.round(f.satisfaction)) +'</span> '+ f.satisfaction +'（'+ f.feedback +' 条评价）' : '待评价';
+  $('factDrawerBody').innerHTML = kv('申报支部', f.branch) + kv('当前进度', f.progress) + kv('群众满意度', sat) +
+    '<div class="warn-banner"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>群众满意度评价是实事成效评估的核心依据，办结后开放评价入口。</div>';
+  openDrawer('factDrawer');
+}
+
+/* ===== 子标签④ 党建+业务融合 ===== */
+function renderFusionBoard(){
+  var pioneer = FUSION.filter(function(x){ return x.type==='党员先锋岗'; }).length;
+  var zone = FUSION.filter(function(x){ return x.type==='党员责任区'; }).length;
+  var battle = FUSION.filter(function(x){ return x.type==='攻坚项目'; }).length;
+  var active = FUSION.filter(function(x){ return x.status!=='已结项'; }).length;
+  $('fusionBoard').innerHTML =
+    '<div class="bd"><div class="lbl">党员先锋岗</div><div class="num">'+ pioneer +'</div><div class="trend">先锋示范·业务攻坚</div></div>'+
+    '<div class="bd"><div class="lbl">党员责任区</div><div class="num">'+ zone +'</div><div class="trend">责任到岗·问题办结</div></div>'+
+    '<div class="bd"><div class="lbl">攻坚项目</div><div class="num">'+ battle +'</div><div class="trend">党建赋能·价值创造</div></div>'+
+    '<div class="bd"><div class="lbl">在推项目</div><div class="num">'+ active +'</div><div class="trend">党建与业务联动中</div></div>';
+}
+function renderFusion(){
+  $('fusionBody').innerHTML = FUSION.map(function(j){
+    var ops = '';
+    if(j.status==='认领中'){ ops += '<button class="btn btn-primary btn-sm" onclick="claimFusion(\''+j.id+'\')">认领</button> '; }
+    else if(j.status==='执行中'){ ops += '<button class="btn btn-secondary btn-sm" onclick="closeFusion(\''+j.id+'\')">结项</button> '; }
+    else { ops += '<span class="muted">已结项</span>'; }
+    return '<tr>'+
+      '<td>'+ statusTag(j.type) +'</td>'+
+      '<td>'+ esc(j.name) +'</td>'+
+      '<td>'+ esc(j.owner) +'</td>'+
+      '<td>'+ esc(j.kpi) +'</td>'+
+      '<td>'+ statusTag(j.status) +'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function publishFusion(){
+  var type = $('fusionType').value, name = $('fusionName').value.trim(), owner = $('fusionOwner').value.trim(), kpi = $('fusionKpi').value.trim();
+  if(!name || !owner || !kpi){ showToast('请填写完整项目信息'); return; }
+  var id = 'J2026-' + (FUSION.length+1<10?'0':'') + (FUSION.length+1);
+  FUSION.unshift({ id:id, type:type, name:name, owner:owner, kpi:kpi, status:'认领中' });
+  closeModal('fusionModal');
+  renderFusion(); renderFusionBoard(); renderKpi();
+  showToast('融合项目已发布：'+ name);
+}
+function claimFusion(id){
+  var j = FUSION.find(function(x){ return x.id===id; });
+  j.status = '执行中';
+  renderFusion(); renderFusionBoard();
+  showToast('已认领，进入执行：'+ j.name);
+}
+function closeFusion(id){
+  var j = FUSION.find(function(x){ return x.id===id; });
+  j.status = '已结项';
+  renderFusion(); renderFusionBoard();
+  showToast('已结项：'+ j.name);
+}
+
+/* ===== 子标签⑤ 党建品牌创建 ===== */
+function renderBrands(){
+  $('brandBody').innerHTML = BRANDS.map(function(b){
+    var ops = '<button class="btn btn-secondary btn-sm" onclick="openBrand(\''+b.id+'\')">查看</button> ';
+    if(b.status==='申报中') ops += '<button class="btn btn-primary btn-sm" onclick="reviewBrand(\''+b.id+'\',\'评审中\')">送审</button>';
+    else if(b.status==='评审中') ops += '<button class="btn btn-primary btn-sm" onclick="reviewBrand(\''+b.id+'\',\'已认定\')">认定</button><button class="btn btn-danger btn-sm" onclick="reviewBrand(\''+b.id+'\',\'培育中\')">转培育</button>';
+    else if(b.status==='培育中') ops += '<button class="btn btn-primary btn-sm" onclick="reviewBrand(\''+b.id+'\',\'评审中\')">重新送审</button>';
+    return '<tr>'+
+      '<td>'+ esc(b.branch) +'</td>'+
+      '<td>'+ esc(b.name) +'</td>'+
+      '<td>'+ statusTag(b.status) +'</td>'+
+      '<td class="muted">'+ esc(b.effect) +'</td>'+
+      '<td>'+ ops +'</td>'+
+    '</tr>';
+  }).join('');
+}
+function renderBrandGrid(){
+  $('brandGrid').innerHTML = BRANDS.map(function(b){
+    var cover = b.status==='已认定' ? 'gold' : b.status==='评审中' ? 'blue' : b.status==='培育中' ? 'green' : '';
+    return '<div class="tile"><div class="cover '+cover+'">'+ esc(b.branch) +'<br>'+ esc(b.status) +'</div>'+
+      '<div class="tb-pad"><h3>'+ esc(b.name) +'</h3>'+
+      '<div class="ds">'+ esc(b.effect) +'</div>'+
+      '<div class="tb-foot"><span>'+ statusTag(b.status) +'</span><button class="btn btn-ghost btn-sm" onclick="openBrand(\''+b.id+'\')">查看</button></div>'+
+      '</div></div>';
+  }).join('');
+}
+function applyBrand(){
+  var branch = $('brandBranch').value.trim(), name = $('brandName').value.trim(), effect = $('brandEffect').value.trim();
+  if(!branch || !name){ showToast('请填写支部与品牌名称'); return; }
+  var id = 'B2026-' + (BRANDS.length+1<10?'0':'') + (BRANDS.length+1);
+  BRANDS.unshift({ id:id, branch:branch, name:name, status:'申报中', effect:effect });
+  closeModal('brandModal');
+  renderBrands(); renderBrandGrid(); renderKpi();
+  showToast('党建品牌已申报：'+ name);
+}
+function reviewBrand(id, st){
+  var b = BRANDS.find(function(x){ return x.id===id; });
+  b.status = st;
+  renderBrands(); renderBrandGrid(); renderKpi();
+  showToast('品牌状态更新：'+ st);
+}
+function openBrand(id){
+  var b = BRANDS.find(function(x){ return x.id===id; });
+  $('brandDrawerTitle').textContent = b.name;
+  $('brandDrawerBody').innerHTML = kv('申报支部', b.branch) + kv('当前状态', b.status) + kv('品牌成效', b.effect) +
+    '<div class="sub-note">材料与展示</div>'+
+    '<div class="chips"><span class="tag blue">申报书</span><span class="tag green">活动照片</span><span class="tag gold">成效报道</span></div>'+
+    '<div class="warn-banner"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>品牌经上级评审认定后，纳入党建风采展示并跟踪年度成效。</div>';
+  openDrawer('brandDrawer');
+}
+
+/* ===== 初始化 ===== */
+function init(){
+  renderKpi();
+  var key = (location.hash||'#report').replace('#','');
+  if(!TAB_CRUMB[key]) key='report';
+  switchSub(key);
+}
+window.addEventListener('hashchange', function(){ var k=(location.hash||'#report').replace('#',''); if(TAB_CRUMB[k]) switchSub(k); });
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发展党员 · 党建管理系统</title>
+<!--
+  页面：03 发展党员（模块 4.2 子页 · PC）
+  设计系统：设计令牌.md 的 :root 变量块（原样保留）
+  蓝色新增项（验收①）：25 节点阶段化步骤条；4 处法定公示节点（节点7/14/19/25）公示中=蓝+倒计时、异议中=红分支；
+    退回/终止分支（终止填因+归档留痕）；提交前校验清单合并「公示未完成/异议未结案+材料缺失+时间不足」一并拦截。
+  交互：步骤条节点点击高亮+详情；公示倒计时；模拟收到异议切换红分支；提交校验禁用；退回/终止分支。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 380px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav .group { font-size: 11px; color: rgba(255,255,255,0.6); padding: var(--space-3) var(--space-5) var(--space-1); letter-spacing: .5px; }
+.nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 var(--space-5); color: rgba(255,255,255,0.9); font-size: var(--fs-body); position: relative; transition: background .12s ease; }
+.nav-item svg { width: 17px; height: 17px; flex: none; color: #FFD260; }
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+.nav-item.active svg { color: #FFD260; }
+.nav-item .badge { margin-left: auto; min-width: 16px; height: 16px; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 11px; display: grid; place-items: center; }
+.nav-sub { padding-left: 18px; } .nav-sub .nav-item { height: 34px; font-size: 13px; }
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+.role-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--state-blue-bg); color: var(--state-blue-text); font-size: 11px; font-weight: 600; }
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-primary[disabled] { background: #F0C9CD; color: #fff; cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.btn-danger { background: var(--brand-red); color: #fff; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); } .tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); } .tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* 步骤条 */
+.steps-card .card-b { padding: var(--space-5) var(--space-5) var(--space-6); }
+.stage-row { display: flex; align-items: center; gap: var(--space-3); padding: 10px 0; }
+.stage-row + .stage-row { border-top: 1px solid var(--border-light); }
+.stage-name { width: 96px; flex: none; font-size: var(--fs-caption); font-weight: 600; color: var(--text-secondary); text-align: right; padding-right: var(--space-3); }
+.stage-cnt { display: block; font-size: 10px; font-weight: 500; color: var(--brand-blue); margin-top: 2px; }
+.stage-nodes { display: flex; align-items: center; flex: 1; overflow-x: auto; padding-bottom: 4px; }
+.step { display: flex; align-items: center; flex: none; cursor: pointer; }
+.step .sdot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border-color); flex: none; position: relative; transition: transform .12s ease; }
+.step:hover .sdot { transform: scale(1.08); }
+.step .sdot.green { background: var(--state-green); } .step .sdot.blue { background: var(--brand-blue); } .step .sdot.red { background: var(--brand-red); }
+.step .sdot.gray { background: var(--state-gray-dot); } .step .sdot.orange { background: var(--state-orange); }
+.step .sname { font-size: 11px; color: var(--text-secondary); max-width: 76px; margin-left: 6px; line-height: 1.25; }
+.step.active .sname { color: var(--brand-red); font-weight: 600; }
+.step.active .sdot { box-shadow: 0 0 0 3px rgba(194,31,48,0.25); }
+.step .line { width: 22px; height: 2px; background: var(--border-color); flex: none; }
+.step .line.done { background: var(--state-green); }
+.gs-badge { position: absolute; top: -8px; right: -10px; background: var(--brand-blue); color: #fff; font-size: 9px; padding: 0 4px; border-radius: var(--radius-pill); white-space: nowrap; }
+
+/* 两级视图：概览 / 人员详情 */
+.view { display: flex; flex-direction: column; gap: var(--card-gap); }
+.crumb-2 { display: flex; align-items: center; gap: 8px; font-size: var(--fs-body); color: var(--text-secondary); }
+.crumb-2 .c2-link { color: var(--brand-blue); cursor: pointer; }
+.crumb-2 .c2-link:hover { text-decoration: underline; }
+.crumb-2 .c2-sep { color: var(--border-color); }
+.crumb-2 .c2-cur { color: var(--text-primary); font-weight: 600; }
+.section-h { display: flex; align-items: center; gap: 10px; font-size: var(--fs-module); font-weight: 700; color: var(--text-primary); margin: var(--space-2) 0 calc(var(--space-2) * -1); }
+.section-h .sh-num { width: 22px; height: 22px; border-radius: 50%; background: var(--brand-red); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.zone { display: grid; gap: var(--card-gap); }
+.zone-progress { grid-template-columns: 1.3fr 1fr; }
+.zone-handle { grid-template-columns: 1fr; }   /* 单列，信息密度一致，消除双列留白 */
+.zone-archive { grid-template-columns: 1fr; }
+.node-detail { display: flex; gap: var(--space-4); flex-wrap: wrap; padding: var(--space-3) var(--space-4); background: var(--bg-page); border-radius: var(--radius-md); margin-bottom: var(--space-4); font-size: var(--fs-caption); }
+.node-detail b { color: var(--text-primary); }
+.form-row { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-3); padding: 10px 0; border-bottom: 1px solid var(--border-light); align-items: start; }
+.form-row .fl { color: var(--text-secondary); font-size: var(--fs-body); }
+.form-row .fv { font-size: var(--fs-body); }
+.field-in { width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; font-size: var(--fs-body); font-family: inherit; color: var(--text-primary); }
+.field-in:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.attach-list { display: flex; flex-direction: column; gap: 8px; }
+.attach { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: var(--fs-caption); }
+.attach .ai { width: 22px; height: 22px; border-radius: 4px; background: var(--bg-page); display: grid; place-items: center; color: var(--text-secondary); flex: none; }
+.attach .an { flex: 1; }
+
+/* 公示组件 */
+.gongshi { border: 1px solid var(--brand-blue); background: #F4F8FC; border-radius: var(--radius-md); padding: var(--space-4); }
+.gongshi .gs-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.gongshi .gs-title { font-size: var(--fs-module); font-weight: 600; color: var(--state-blue-text); }
+.countdown { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--state-blue-text); font-size: var(--fs-body); }
+.countdown .cd-box { background: var(--brand-blue); color: #fff; padding: 2px 8px; border-radius: var(--radius-sm); min-width: 30px; text-align: center; }
+.gs-meta { font-size: var(--fs-caption); color: var(--text-secondary); line-height: 1.9; }
+.gs-meta b { color: var(--text-primary); }
+.gs-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
+.yiyi-box { margin-top: var(--space-4); border: 1px solid #F3C6CC; background: #FCE9EB; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.yiyi-box .yt { color: var(--state-red-text); font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.yiyi-box .yd { font-size: var(--fs-caption); color: var(--state-red-text); line-height: 1.8; }
+
+/* 校验清单 */
+.checklist { display: flex; flex-direction: column; gap: var(--space-2); }
+.check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: var(--fs-body); }
+.check-item .ci { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; flex: none; font-size: 12px; color: #fff; }
+.check-item.ok .ci { background: var(--state-green); } .check-item.fail .ci { background: var(--brand-red); }
+.check-item .ct { flex: 1; } .check-item .cr { font-size: var(--fs-caption); } .check-item.ok .cr { color: var(--state-green-text); } .check-item.fail .cr { color: var(--state-red-text); }
+.submit-bar { margin-top: var(--space-4); display: flex; flex-direction: column; gap: 10px; }
+.branch-bar { display: flex; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px dashed var(--border-color); margin-top: var(--space-4); }
+.branch-bar .bl { font-size: var(--fs-caption); color: var(--text-secondary); align-self: center; margin-right: auto; }
+/* KPI 指标卡 */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); position: relative; overflow: hidden; }
+.kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--brand-red); }
+.kpi .lbl { font-size: var(--fs-caption); color: var(--text-secondary); }
+.kpi .num { font-size: 26px; font-weight: 700; font-family: var(--font-num); margin: 4px 0 2px; }
+.kpi .num.red { color: var(--brand-red); } .kpi .num.blue { color: var(--brand-blue); } .kpi .num.gold { color: var(--brand-gold); } .kpi .num.green { color: var(--state-green); }
+.kpi .trend { font-size: 11px; color: var(--text-secondary); }
+/* 六类关键校验规则卡 */
+.rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.rule-card { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); background: var(--bg-page); }
+.rule-card .rc-t { font-size: 13px; font-weight: 700; color: var(--brand-red); margin-bottom: 4px; }
+.rule-card .rc-d { font-size: 12px; color: var(--text-primary); line-height: 1.5; }
+.rule-card .rc-ex { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+/* 校验规则演示条 */
+.rule-demo { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px dashed var(--border-color); }
+.rule-demo .rd-t { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.rule-demo .rd-note { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
+
+/* 输出项：进度台账 / 超期预警 / 归档包 */
+.out-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--card-gap); }
+.ledger { display: flex; flex-direction: column; gap: 8px; }
+.ledger-row { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 12px; }
+.ledger-row .lr-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ledger-row .lr-name { font-weight: 600; font-size: 13px; }
+.ledger-row .lr-sub { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
+.lr-track { display: flex; height: 8px; border-radius: var(--radius-pill); overflow: hidden; background: var(--border-light); }
+.lr-track > span { height: 100%; }
+.lr-stages { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 4px; }
+.warn-list { display: flex; flex-direction: column; gap: 8px; }
+.warn-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #F3C6CC; background: #FCE9EB; border-radius: var(--radius-md); }
+.warn-item .wi { width: 20px; height: 20px; border-radius: 50%; background: var(--brand-red); color: #fff; display: grid; place-items: center; flex: none; font-size: 12px; }
+.warn-item .wt { font-size: 13px; font-weight: 600; color: var(--state-red-text); }
+.warn-item .wd { font-size: 11px; color: var(--state-red-text); line-height: 1.6; margin-top: 2px; }
+.archive-box { display: flex; flex-direction: column; gap: 12px; }
+.archive-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.archive-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 12px; background: var(--bg-page); }
+.archive-item .ai { width: 20px; height: 20px; border-radius: 4px; background: #fff; display: grid; place-items: center; color: var(--text-secondary); flex: none; }
+.arch-progress { font-size: 12px; color: var(--text-secondary); }
+.arch-bar { height: 6px; border-radius: var(--radius-pill); background: var(--border-light); overflow: hidden; margin-top: 4px; }
+.arch-bar > span { display: block; height: 100%; background: var(--state-green); }
+
+/* 流程时间轴 */
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; background: var(--border-color); }
+.tl-item { position: relative; padding: 0 0 var(--space-4) 0; }
+.tl-item::before { content: ""; position: absolute; left: -19px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--state-green); border: 2px solid #fff; box-shadow: 0 0 0 1px var(--state-green); }
+.tl-item .tl-t { font-size: var(--fs-body); font-weight: 600; }
+.tl-item .tl-m { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+.tl-item .tl-op { margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--brand-blue); cursor: pointer; }
+
+/* 步骤条可点击（master-detail：点击联动右侧节点详情面板） */
+.step.clickable { cursor: pointer; transition: transform .12s ease; }
+.step.clickable:hover { transform: translateY(-2px); }
+.step.clickable .sdot:hover { box-shadow: 0 0 0 3px rgba(194,31,48,.15); }
+
+/* 节点详情面板（detail） */
+.node-panel { min-height: 120px; }
+.np-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.np-status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-body); font-weight: 600; }
+.np-flag { font-size: var(--fs-caption); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+.np-flag.gs { background: #EAF2FB; color: var(--brand-blue); }
+.np-flag.vote { background: #FCE9EB; color: var(--brand-red); }
+.np-time-row { display: flex; align-items: baseline; gap: 8px; padding: 10px 12px; background: var(--bg-subtle); border-radius: var(--radius-md); margin-bottom: 12px; }
+.np-time-label { font-size: var(--fs-caption); color: var(--text-secondary); }
+.np-time { font-size: var(--fs-module); }
+.np-time.val-done { color: var(--state-green); }
+.np-time.val-plan { color: var(--brand-blue); }
+.np-meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.np-meta > div { display: flex; flex-direction: column; gap: 3px; }
+.np-k { font-size: var(--fs-caption); color: var(--text-secondary); }
+.np-meta b { font-size: var(--fs-body); font-weight: 600; }
+.np-ins { margin-bottom: 10px; }
+.np-inputs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.np-input-tag { font-size: var(--fs-caption); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--border-light); color: var(--text-secondary); }
+.np-input-tag.blue { background: #EAF2FB; border-color: #CFE0F2; color: var(--brand-blue); }
+.np-input-tag.green { background: #EAF7EE; border-color: #C9E9D4; color: var(--state-green); }
+.np-input-tag.gold { background: #FBF3E0; border-color: #F0E1BC; color: var(--brand-gold); }
+.np-input-tag.gray { background: #F2F2F2; border-color: var(--border-light); color: var(--text-secondary); }
+.np-input-tag.red { background: #FCE9EB; border-color: #F3C6CC; color: var(--brand-red); }
+.np-foot { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-caption); color: var(--brand-blue); cursor: pointer; padding-top: 4px; border-top: 1px dashed var(--border-light); }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 400; }
+.modal-mask.open { display: flex; }
+.modal { width: 440px; max-width: calc(100vw - 32px); background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+.modal .m-head { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; }
+.modal .m-head h3 { font-size: var(--fs-module); font-weight: 600; }
+.modal .m-head .mi { width: 30px; height: 30px; border-radius: 50%; background: #FCE9EB; color: var(--brand-red); display: grid; place-items: center; }
+.modal .m-body { padding: var(--space-6); font-size: var(--fs-body); color: var(--text-primary); }
+.modal .m-foot { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: var(--space-3); }
+.modal .warn-box { background: #FCE9EB; border: 1px solid #F3C6CC; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); color: var(--state-red-text); font-size: var(--fs-caption); margin-bottom: var(--space-4); display: flex; gap: 8px; }
+.modal .field { margin-bottom: var(--space-4); }
+.modal .field label { display: block; font-size: var(--fs-caption); color: var(--text-secondary); margin-bottom: 6px; }
+.modal .field label .req { color: var(--brand-red); }
+.modal .field textarea, .modal .field input { width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; font-size: var(--fs-body); font-family: inherit; color: var(--text-primary); }
+.modal .field textarea:focus, .modal .field input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 500; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); } .toast b { color: var(--chart-8); }
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* 多级导航分组（按 PRD 三·核心业务模块） */
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; overflow: hidden; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo"><span class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5l2.6 5.9 6.4.6-4.9 4.3 1.5 6.3L12 16.9 6.4 19.6 7.9 13.3 3 8.9l6.4-.6L12 2.5z" fill="#fff"/></svg></span><span class="t">党建管理系统<small>Party Building</small></span></div>
+  <nav class="nav">
+                <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)">
+        <svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <a class="ng-label" href="01-首页工作台.html" style="color:inherit;flex:1">首页</a>
+        <span class="nav-arrow" onclick="event.stopPropagation();toggleNavGroup(this.closest('.nav-group'))">▾</span>
+      </div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <div class="nav-group active">
+      <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20a7 7 0 0114 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item active" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#movable" onclick="navLeaf(this)">流动党员与党籍异动管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织生活管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h7v14H4zM13 5h7v14h-7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14H4zM8 9h8M8 13h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">宣传与思想阵地</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="13-宣传与思想阵地.html#portal" onclick="navLeaf(this)">党建资讯门户</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#honor" onclick="navLeaf(this)">党建风采展示</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#red" onclick="navLeaf(this)">红色教育资源</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">特色业务</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="14-特色业务.html#report" onclick="navLeaf(this)">双报到双服务</a>
+        <a class="nav-item" href="14-特色业务.html#vol" onclick="navLeaf(this)">志愿服务</a>
+        <a class="nav-item" href="14-特色业务.html#fact" onclick="navLeaf(this)">我为群众办实事</a>
+        <a class="nav-item" href="14-特色业务.html#fusion" onclick="navLeaf(this)">党建+业务融合</a>
+        <a class="nav-item" href="14-特色业务.html#brand" onclick="navLeaf(this)">党建品牌创建</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">系统管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="15-系统管理.html#role" onclick="navLeaf(this)">权限与角色管理</a>
+        <a class="nav-item" href="15-系统管理.html#msg" onclick="navLeaf(this)">消息中心</a>
+        <a class="nav-item" href="15-系统管理.html#export" onclick="navLeaf(this)">台账导出引擎</a>
+        <a class="nav-item" href="15-系统管理.html#config" onclick="navLeaf(this)">系统配置</a>
+        <a class="nav-item" href="15-系统管理.html#cert" onclick="navLeaf(this)">党员证明开具</a>
+      </div>
+    </div>
+    
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">党员全生命周期管理 <span style="color:var(--text-secondary)">/</span> <b>发展党员全流程管理</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input type="text" placeholder="搜索发展对象、流程单…"></div>
+    <div class="top-actions">
+      <button class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>第二党支部</button>
+      <button class="icon-btn" title="消息" onclick="openDrawer('drawer-msg')"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14v10H5zM5 7l7 5 7-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="dot">2</span></button>
+      <button class="icon-btn" title="帮助" onclick="showToast('已打开帮助中心（演示）')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 113.5 2.3c-.8.4-1 .9-1 1.7M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <div class="user"><span class="avatar">王</span><div><div class="nm">王*（支部管理员）<span class="role-chip">支部</span></div><div class="role">发展党员经办人</div></div></div>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- ================= 1级 · 概览页 ================= -->
+    <section id="view-overview" class="view">
+    <div class="page-head">
+      <div><h1>发展党员全流程管理</h1><div class="sub">PRD 3.2.2 · 25 节点刚性流程线上管控 · 概览看板</div></div>
+      <div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary" onclick="showToast('导出归档包（演示）')">导出归档包</button><button class="btn btn-primary" onclick="showToast('新建发展流程（演示）')">新建流程</button></div>
+    </div>
+
+    <div class="kpis" style="margin-bottom:var(--card-gap)">
+      <div class="kpi"><div class="lbl">在库发展对象</div><div class="num red">6</div><div class="trend">入党积极分子 / 发展对象</div></div>
+      <div class="kpi"><div class="lbl">进行中流程</div><div class="num blue">9</div><div class="trend">申请→转正 在途</div></div>
+      <div class="kpi"><div class="lbl">本月待公示</div><div class="num gold">4</div><div class="trend">4 处法定公示节点</div></div>
+      <div class="kpi"><div class="lbl">超时预警</div><div class="num green">1</div><div class="trend">党委审批 3 个月时效</div></div>
+      <div class="kpi"><div class="lbl">本年已转正</div><div class="num green">7</div><div class="trend">预备期满审批通过</div></div>
+    </div>
+
+    <!-- 流程全景步骤条（标准 25 节点模板 · 只读） -->
+    <div class="card steps-card">
+      <div class="card-h"><h2>发展党员流程全景 <span class="sub-note">25 节点标准模板 · 蓝色徽标=法定公示节点 · 只读</span></h2><span class="sub-note">点击阶段可在下方台账筛选</span></div>
+      <div class="card-b"><div id="stepBar"></div></div>
+    </div>
+
+    <!-- 发展党员进度台账（下钻入口） -->
+    <div class="card">
+      <div class="card-h"><h2>发展党员进度台账</h2><span class="sub-note" id="ledgerFilter">全部 · PRD 3.2.2 输出项①</span></div>
+      <div class="card-b"><div class="ledger" id="ledger"></div></div>
+    </div>
+
+    <!-- 节点超期预警清单（全局） -->
+    <div class="card">
+      <div class="card-h"><h2>节点超期预警清单</h2><span class="sub-note">PRD 3.2.2 输出项②</span></div>
+      <div class="card-b"><div class="warn-list" id="warnList"></div></div>
+    </div>
+    </section>
+
+    <!-- ================= 2级 · 人员发展详情页 ================= -->
+    <section id="view-person" class="view" style="display:none">
+    <div class="crumb-2">
+      <span class="c2-link" onclick="showView('overview')">发展党员全流程管理</span>
+      <span class="c2-sep">/</span>
+      <span class="c2-cur" id="personCrumb">人员发展详情</span>
+    </div>
+    <div class="page-head">
+      <div><h1 id="personTitle">人员发展详情</h1><div class="sub" id="personSub">PRD 3.2.2 · 该人员发展党员全链路办理</div></div>
+    </div>
+
+    <!-- 分区一 · 流程进度区 -->
+    <div class="section-h"><span class="sh-num">1</span>流程进度</div>
+    <div class="zone zone-progress">
+      <div class="card">
+        <div class="card-h"><h2 id="pStepTitle">个人发展步骤条</h2><span class="sub-note">点击节点查看详情 · 绿=已办 红=异议 蓝=公示中 灰=待办</span></div>
+        <div class="card-b"><div id="pStepBar"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2 id="npTitle">节点详情</h2><span class="sub-note" id="npSub">含完成/计划时间</span></div>
+        <div class="card-b"><div class="node-panel" id="nodePanel"></div></div>
+      </div>
+    </div>
+
+    <!-- 分区二 · 办理操作区 -->
+    <div class="section-h"><span class="sh-num">2</span>办理操作</div>
+    <div class="zone zone-handle">
+      <div id="personWarn"></div>
+      <div class="card">
+        <div class="card-h"><h2 id="curTitle">当前节点办理</h2><span class="sub-note" id="curStage">阶段</span></div>
+        <div class="card-b">
+          <div id="curBody"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2>提交前校验清单</h2></div>
+        <div class="card-b">
+          <div class="checklist" id="checklist"></div>
+          <div class="submit-bar">
+            <button class="btn btn-primary" id="submitBtn" style="justify-content:center" onclick="doSubmit()">提交当前节点</button>
+          </div>
+          <div class="branch-bar">
+            <span class="bl">流程分支（高风险）：</span>
+            <button class="btn btn-secondary" onclick="confirmOp('退回上一节点','退回须填写退回意见')">退回</button>
+            <button class="btn btn-danger" onclick="confirmOp('终止发展流程','终止须填写原因并归档留痕')">终止</button>
+          </div>
+          <div class="sub-note" style="margin-top:10px;line-height:1.7">异常处理（PRD 3.2.2）：关键节点<b>材料缺失 / 时间不满足 / 人数不达标</b>时，提交按钮自动置灰并明确提示不通过原因；<b>退回 / 终止 / 公示异议</b>均须填写原因、全程留痕并归入归档包异常处理卷。</div>
+          <details class="rule-demo">
+            <summary class="rd-t">关键自动校验规则演示（点击展开）</summary>
+            <div class="rd-note">依据《中国共产党发展党员工作细则》，系统对以下刚性规则自动校验，不满足则拦截并注明原因。</div>
+            <div class="rule-grid" id="ruleGrid" style="margin:10px 0"></div>
+            <button class="btn btn-ghost btn-sm" id="btnTrain" onclick="toggleTrain()">▶ 模拟：集中培训学时达标（当前未达标）</button>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- 分区三 · 档案材料区 -->
+    <div class="section-h"><span class="sh-num">3</span>档案材料</div>
+    <div class="zone zone-archive">
+      <div class="card">
+        <div class="card-h"><h2>全套发展党员材料归档包</h2><span class="sub-note">PRD 3.2.2 输出项③</span></div>
+        <div class="card-b">
+          <div class="archive-box">
+            <div class="arch-progress">本对象归档材料完成度：<b id="archPct">76%</b>
+              <div class="arch-bar"><span id="archBar" style="width:76%"></span></div>
+            </div>
+            <div class="archive-list" id="archiveList"></div>
+            <div style="display:flex;gap:var(--space-3)">
+              <button class="btn btn-primary" onclick="genArchive()">一键生成归档包</button>
+              <button class="btn btn-secondary" onclick="showToast('下载《'+'张*'+'发展党员材料归档包.zip》（演示）')">下载归档包</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="drawer-mask" id="mask-msg" onclick="closeDrawer('drawer-msg')"></div>
+<aside class="drawer" id="drawer-msg" style="width:360px">
+  <div class="d-head" style="height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-5);border-bottom:1px solid var(--border-color)"><h3>待办</h3><button class="d-close" onclick="closeDrawer('drawer-msg')" style="width:32px;height:32px;border:none;background:transparent;border-radius:6px;display:grid;place-items:center;color:var(--text-secondary)"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+  <div style="padding:var(--space-5)"><div style="padding:8px 0;border-bottom:1px solid var(--border-light)">处置公示异议：张* 节点19 <small style="color:var(--text-secondary)">今日</small></div><div style="padding:8px 0;border-bottom:1px solid var(--border-light)">接收预备党员前公示到期提醒 <small style="color:var(--text-secondary)">今日</small></div></div>
+</aside>
+
+<div class="modal-mask" id="modalConfirm">
+  <div class="modal">
+    <div class="m-head"><span class="mi"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 id="mcTitle">二次确认</h3></div>
+    <div class="m-body">
+      <div class="warn-box"><svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div id="mcWarn">该操作为高风险操作，将写入审计日志。</div></div>
+      <div class="field"><label id="mcLabel">操作原因 <span class="req">*</span></label><textarea id="mcReason" rows="2" placeholder="请填写原因（必填）"></textarea></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-secondary" onclick="closeModal('modalConfirm')">取消</button><button class="btn btn-primary" onclick="confirmSubmit()">确认</button></div>
+  </div>
+</div>
+
+<!-- 表决结果弹窗：输入项-表决结果（PRD 3.2.2） -->
+<div class="modal-mask" id="modalVote">
+  <div class="modal" style="width:480px">
+    <div class="m-head"><span class="mi"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 5h16v14H4zM8 9h8M8 13h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span><h3 id="voteTitle">支部大会表决（节点21）</h3></div>
+    <div class="m-body">
+      <div class="sub-note" style="margin-bottom:10px">系统自动校验：有表决权正式党员到会须超半数方可开会；赞成票须超应到会有表决权党员半数方可通过。</div>
+      <div class="form-row" style="padding:6px 0"><div class="fl">应到会（有表决权）</div><div class="fv"><input class="field-in" id="voteTotal" type="number" value="20"></div></div>
+      <div class="form-row" style="padding:6px 0"><div class="fl">实际到会</div><div class="fv"><input class="field-in" id="voteAttend" type="number" value="18"></div></div>
+      <div class="form-row" style="padding:6px 0"><div class="fl">赞成票</div><div class="fv"><input class="field-in" id="voteAgree" type="number" value="18"></div></div>
+      <div id="voteResult" class="warn-box" style="display:none;margin-top:8px"></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-secondary" onclick="closeModal('modalVote')">取消</button><button class="btn btn-primary" onclick="submitVote()">确认提交表决结果</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 通用 ===== */
+function showToast(msg){ const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+function openDrawer(id){ const m=document.getElementById('mask-'+id.split('-')[1]); if(m) m.classList.add('open'); document.getElementById(id).classList.add('open'); }
+function closeDrawer(id){ const m=document.getElementById('mask-'+id.split('-')[1]); if(m) m.classList.remove('open'); document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e=>{ if(e.target.classList.contains('modal-mask')) e.target.classList.remove('open'); });
+
+/* ===== 步骤条数据 ===== */
+const STAGES=['申请入党','入党积极分子','发展对象','接收预备党员','预备党员转正'];
+// 输入项分类：申请材料 / 思想汇报 / 考察意见 / 证明材料 / 表决结果（对齐 PRD 3.2.2 输入项）
+// 每个节点 inputs：[{cat, name, ctl}]  ctl: file=材料(可上传演示) / text=文本录入 / num=数字录入
+const NODES=[
+ // 一、申请入党（节点1-4）
+ {n:1,s:0,name:'提交入党申请书',role:'申请人',pre:'自愿提交书面申请；年满18周岁',st:'done',
+  inputs:[{cat:'申请材料',name:'书面入党申请书（本人亲笔签名）',ctl:'file'},{cat:'证明材料',name:'申请人身份证复印件',ctl:'file'}]},
+ {n:2,s:0,name:'支部派人谈话',role:'党支部',pre:'收到申请书1个月内派人谈话',st:'done',
+  inputs:[{cat:'考察意见',name:'谈话记录表（谈话人填写并签名）',ctl:'text'},{cat:'证明材料',name:'谈话人资质/分工确认',ctl:'file'}]},
+ {n:3,s:0,name:'党员推荐/群团推优',role:'党员/群团组织',pre:'确定入党积极分子人选',st:'done',
+  inputs:[{cat:'申请材料',name:'党员推荐票 / 群团组织推优表',ctl:'file'}]},
+ {n:4,s:0,name:'支委会研究确定入党申请人',role:'支委会',pre:'谈话完成、推优通过',st:'done',
+  inputs:[{cat:'表决结果',name:'支委会决议（应到/实到/赞成）',ctl:'vote'},{cat:'证明材料',name:'支委会会议记录',ctl:'file'}]},
+ // 二、入党积极分子（节点5-10）
+ {n:5,s:1,name:'上级党委备案（积极分子）',role:'上级党委',pre:'备案后生效',st:'done',
+  inputs:[{cat:'申请材料',name:'备案报告（含人选名册）',ctl:'file'},{cat:'证明材料',name:'党委备案回执',ctl:'file'}]},
+ {n:6,s:1,name:'指定2名培养联系人',role:'党支部',pre:'明确培养责任',st:'done',
+  inputs:[{cat:'考察意见',name:'培养联系人指定通知（2名）',ctl:'text'}]},
+ {n:7,s:1,name:'入党积极分子公示',role:'支委会/上级党委',pre:'≥5个工作日，异议归档',st:'done',gs:true,
+  inputs:[{cat:'申请材料',name:'公示公告稿 + 公示现场照片',ctl:'file'},{cat:'证明材料',name:'异议受理/核查单（无则填"无异议"）',ctl:'file'}]},
+ {n:8,s:1,name:'每季度思想汇报、培养考察',role:'培养联系人',pre:'系统自动提醒',st:'done',
+  inputs:[{cat:'思想汇报',name:'本季度书面思想汇报（每季度1篇）',ctl:'text'},{cat:'考察意见',name:'培养联系人季度考察写实',ctl:'text'}]},
+ {n:9,s:1,name:'支部每半年考察',role:'支委会',pre:'形成考察意见',st:'done',
+  inputs:[{cat:'考察意见',name:'支部半年考察意见（每半年1次）',ctl:'text'}]},
+ {n:10,s:1,name:'培养考察满12个月',role:'系统',pre:'不足自动拦截',st:'done',
+  inputs:[{cat:'证明材料',name:'培养考察时长系统校验（满12个月自动解锁）',ctl:'file'}]},
+ // 三、发展对象（节点11-16）
+ {n:11,s:2,name:'听取党小组/培养人/党员群众意见',role:'党小组',pre:'—',st:'done',
+  inputs:[{cat:'考察意见',name:'征求意见汇总表（党小组/培养人/党员/群众）',ctl:'text'}]},
+ {n:12,s:2,name:'支委会讨论确定发展对象',role:'支委会',pre:'积极分子满12个月',st:'done',
+  inputs:[{cat:'表决结果',name:'支委会决议（应到/实到/赞成）',ctl:'vote'},{cat:'证明材料',name:'支委会会议记录',ctl:'file'}]},
+ {n:13,s:2,name:'上级党委备案（发展对象）',role:'上级党委',pre:'备案后生效',st:'done',
+  inputs:[{cat:'申请材料',name:'备案报告（发展对象名册）',ctl:'file'},{cat:'证明材料',name:'党委备案回执',ctl:'file'}]},
+ {n:14,s:2,name:'发展对象公示',role:'支委会/上级党委',pre:'≥5个工作日',st:'done',gs:true,
+  inputs:[{cat:'申请材料',name:'公示公告稿 + 公示现场照片',ctl:'file'},{cat:'证明材料',name:'异议受理/核查单',ctl:'file'}]},
+ {n:15,s:2,name:'政治审查（含政审材料）',role:'党支部',pre:'不合格禁入下一环节',st:'done',
+  inputs:[{cat:'证明材料',name:'政治审查材料（函调/外调材料、现实表现证明）',ctl:'file'},{cat:'考察意见',name:'政治审查结论（支委会形成）',ctl:'text'}]},
+ {n:16,s:2,name:'短期集中培训≥3天/24学时',role:'党委',pre:'未培训不得发展',st:'done',
+  inputs:[{cat:'证明材料',name:'短期集中培训结业证书',ctl:'file'},{cat:'考察意见',name:'培训学时记录（≥24学时）',ctl:'text'}]},
+ // 四、接收预备党员（节点17-23）
+ {n:17,s:3,name:'支部委员会审查',role:'支委会',pre:'政审+培训合格',st:'done',
+  inputs:[{cat:'考察意见',name:'支委会审查意见（材料齐全、程序合规）',ctl:'text'}]},
+ {n:18,s:3,name:'上级党委预审',role:'上级党委',pre:'—',st:'done',
+  inputs:[{cat:'考察意见',name:'党委预审意见（含《入党志愿书》预审）',ctl:'text'}]},
+ {n:19,s:3,name:'接收预备党员前公示',role:'党支部',pre:'材料齐全+政审合格；≥5个工作日',st:'公示中',gs:true,cur:true,
+  inputs:[{cat:'申请材料',name:'公示公告稿 + 公示现场照片',ctl:'file'},{cat:'证明材料',name:'异议受理/核查单（无异议须注明）',ctl:'file'}]},
+ {n:20,s:3,name:'确定2名入党介绍人、填写《入党志愿书》',role:'党支部',pre:'公示无异议',st:'todo',
+  inputs:[{cat:'证明材料',name:'入党介绍人登记表（2名正式党员）',ctl:'file'},{cat:'申请材料',name:'《入党志愿书》填报（本人+介绍人+支部）',ctl:'text'}]},
+ {n:21,s:3,name:'支部大会讨论表决',role:'党员大会',pre:'到会半数以上、赞成超半数',st:'todo',
+  inputs:[{cat:'表决结果',name:'支部大会表决结果（系统自动校验到会/赞成）',ctl:'vote'},{cat:'证明材料',name:'支部大会会议记录 + 票决结果报告',ctl:'file'}]},
+ {n:22,s:3,name:'上级党委派人谈话',role:'上级党委',pre:'大会通过',st:'todo',
+  inputs:[{cat:'考察意见',name:'谈话人意见记录（是否具备党员条件）',ctl:'text'}]},
+ {n:23,s:3,name:'党委审批（3个月内）',role:'党委会',pre:'超时提醒',st:'todo',
+  inputs:[{cat:'表决结果',name:'党委会审批决议（应到/实到/赞成）',ctl:'vote'},{cat:'考察意见',name:'党委审批意见（是否在3个月内）',ctl:'text'}]},
+ // 五、预备党员转正（节点24-25）
+ {n:24,s:4,name:'编入支部/党小组、入党宣誓、预备期考察',role:'党支部',pre:'预备期1年（每季度汇报）',st:'todo',
+  inputs:[{cat:'证明材料',name:'入党宣誓记录（时间/地点/监誓人）',ctl:'file'},{cat:'思想汇报',name:'预备期每季度思想汇报（共4篇）',ctl:'text'}]},
+ {n:25,s:4,name:'提交转正申请→转正前公示→支部大会表决→上级党委审批→归档',role:'支部/党委',pre:'提前/延期需审批；转正前公示★；预备期1年',st:'todo',gs:true,
+  inputs:[{cat:'申请材料',name:'转正申请书（预备期满前1个月）',ctl:'file'},{cat:'表决结果',name:'转正支部大会表决（应到/实到/赞成）',ctl:'vote'},{cat:'考察意见',name:'党委审批意见（提前/延期须专项审批）',ctl:'text'},{cat:'证明材料',name:'全套材料归档包（见"输出项-归档包"）',ctl:'file'}]}
+];
+// 节点时间：已办节点 date（实际完成）；待办节点 plan（计划/预计完成）。用于详情面板时间展示
+const NODE_DATES={
+  1:{date:'2025-06-03'},2:{date:'2025-06-25'},3:{date:'2025-07-10'},4:{date:'2025-07-15'},
+  5:{date:'2025-07-22'},6:{date:'2025-07-25'},7:{date:'2025-08-05'},8:{date:'2025-09-30'},9:{date:'2025-12-20'},10:{date:'2026-01-15'},
+  11:{date:'2026-01-20'},12:{date:'2026-01-28'},13:{date:'2026-02-03'},14:{date:'2026-02-18'},15:{date:'2026-03-02'},16:{date:'2026-03-10'},
+  17:{plan:'2026-03-20'},18:{plan:'2026-03-25'},19:{date:'2026-03-14 ~ 2026-03-20（公示中）'},20:{plan:'2026-03-25'},21:{plan:'2026-04-02'},22:{plan:'2026-04-10'},23:{plan:'2026-04-28'},
+  24:{plan:'2026-05-10'},25:{plan:'2027-05-10'}
+};
+
+let state={ gongshiDone:false, yiyi:false, selected:19 };
+// 六类关键校验规则演示开关（默认：集中培训学时未达标→拦截；表决未满足→拦截）
+let RULE_FLAG={ train:false, vote:false };
+
+function renderStepBar(){
+  const bar=document.getElementById('stepBar'); let html='';
+  STAGES.forEach((st,si)=>{
+    const ns=NODES.filter(x=>x.s===si);
+    const cnt=LEDGER.filter(x=>x.stage===st).length;
+    html+='<div class="stage-row" data-stage="'+st+'"><div class="stage-name">'+st+'<span class="stage-cnt">在办 '+cnt+'</span></div><div class="stage-nodes">';
+    ns.forEach((nd,idx)=>{
+      const cls = nd.st==='done'?'green':nd.st==='公示中'?(state.yiyi?'red':'blue'):nd.st==='todo'?'gray':nd.st;
+      const sym = cls==='green'?'✓':(nd.n);
+      const active = nd.n===state.selected ? ' active':'';
+      html+='<div class="step'+active+'" onclick="selectNode('+nd.n+')"><div class="sdot '+cls+'">'+sym;
+      html+= nd.gs?'<span class="gs-badge">公示</span>':'';
+      html+='</div><div class="sname">'+nd.name+'</div></div>';
+      if(idx<ns.length-1) html+='<div class="line '+(nd.st==='done'?'done':'')+'"></div>';
+    });
+    html+='</div></div>';
+  });
+  bar.innerHTML=html;
+  // 概览页：阶段名点击 → 台账筛选（只读，不进详情）
+  if(bar){
+    bar.querySelectorAll('.stage-name').forEach(el=>{
+      el.style.cursor='pointer';
+      el.onclick=()=>{ const s=el.getAttribute('data-stage'); filterLedgerByStage(s); };
+    });
+  }
+}
+function filterLedgerByStage(stage){
+  if(stage){ renderLedger(stage); document.getElementById('ledgerFilter').textContent=stage+' · 点击标准模板恢复全部'; document.getElementById('ledgerFilter').setAttribute('data-cur',stage); }
+  else { renderLedger(); document.getElementById('ledgerFilter').textContent='全部 · PRD 3.2.2 输出项①'; }
+}
+
+function selectNode(n){
+  state.selected=n; renderStepBar();
+  const nd=NODES.find(x=>x.n===n);
+  // 分区②：当前节点办理标题（节点详情只读信息已移至分区①节点详情面板，避免重复）
+  const ct=document.getElementById('curTitle'); if(ct) ct.textContent='当前节点：'+nd.name+'（节点'+n+'）';
+  const cs=document.getElementById('curStage'); if(cs) cs.textContent='阶段：'+STAGES[nd.s];
+  // 当前节点主体
+  const body=document.getElementById('curBody');
+  if(nd.gs && (n===19 || state.yiyi)){
+    body.innerHTML = gongshiCard();
+  } else if(nd.gs){
+    body.innerHTML = '<div class="sub-note" style="margin-bottom:8px">本节点为法定公示节点（节点'+n+' '+nd.name+'）。点击上方查看公示组件。</div>'+ genericForm(nd);
+  } else {
+    body.innerHTML = genericForm(nd);
+  }
+}
+// 输入项分类配色（对齐 PRD 3.2.2：申请材料/思想汇报/考察意见/证明材料/表决结果）
+const CAT_COLOR={'申请材料':'blue','思想汇报':'green','考察意见':'gold','证明材料':'gray','表决结果':'red'};
+function genericForm(nd){
+  let html='<div class="sub-note" style="margin-bottom:8px">'+nd.name+' · 节点输入项（PRD 3.2.2）</div>';
+  // 办理说明
+  html+='<div class="form-row"><div class="fl">办理说明</div><div class="fv">按《中国共产党发展党员工作细则》办理，<b>'+nd.name+'</b> 须按下列输入项完备材料、程序合规。</div></div>';
+  // 节点输入项（按分类分色标签）
+  const ins=nd.inputs||[];
+  if(ins.length){
+    const cats=[...new Set(ins.map(x=>x.cat))];
+    html+='<div class="form-row"><div class="fl">输入项分类</div><div class="fv">'+
+      cats.map(c=>'<span class="tag '+CAT_COLOR[c]+'">'+c+'</span>').join(' ')+
+      ' <span class="sub-note">（共'+ins.length+'项）</span></div></div>';
+    html+='<div class="form-row"><div class="fl">逐项材料</div><div class="fv"><div class="attach-list">';
+    ins.forEach(it=>{
+      let ctlHtml='';
+      if(it.ctl==='file'){
+        ctlHtml='<button class="btn btn-secondary" style="height:24px;padding:0 10px;font-size:11px" onclick="showToast(\'上传/查看：'+it.name.replace(/"/g,'')+'（演示）\')">查看/上传</button>';
+      } else if(it.ctl==='text'){
+        ctlHtml='<button class="btn btn-ghost" style="height:24px;padding:0 8px;font-size:11px" onclick="showToast(\'录入：'+it.name.replace(/"/g,'')+'（演示）\')">录入</button>';
+      } else if(it.ctl==='vote'){
+        ctlHtml='<button class="btn btn-danger" style="height:24px;padding:0 10px;font-size:11px" onclick="openVote(\''+nd.n+'\')">发起表决</button>';
+      }
+      html+='<div class="attach"><span class="ai"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M6 3h9l5 5v13H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>'+
+        '<span class="an"><span class="tag '+CAT_COLOR[it.cat]+'">'+it.cat+'</span> '+it.name+'</span>'+ctlHtml+'</div>';
+    });
+    html+='</div></div></div>';
+  }
+  html+='<div class="form-row"><div class="fl">办理意见</div><div class="fv"><textarea class="field-in" rows="2" placeholder="填写办理意见…"></textarea></div></div>';
+  return html;
+}
+function gongshiCard(){
+  const statusTag = state.yiyi ? '<span class="tag red">异议中</span>' : '<span class="tag blue">公示中</span>';
+  let html='<div class="gongshi"><div class="gs-head"><div class="gs-title">接收预备党员前公示（节点19）</div>'+statusTag+'</div>';
+  html+='<div class="gs-meta"><div>公示对象：<b>张*</b>（第二党支部） · 拟接收为预备党员</div>'+
+    '<div>公示期：<b>2026-03-14 ~ 2026-03-20</b>（不少于 5 个工作日）</div>'+
+    '<div>监督渠道：党委组织部 / 纪检 信访举报受理</div>'+
+    '<div style="margin-top:8px">剩余时间：<span class="countdown" id="cd"><span class="cd-box" id="cdD">--</span>天 <span class="cd-box" id="cdH">--</span>时 <span class="cd-box" id="cdM">--</span>分 <span class="cd-box" id="cdS">--</span>秒</span></div></div>';
+  html+='<div class="gs-actions">';
+  if(!state.yiyi){
+    html+='<button class="btn btn-secondary" onclick="simYiyi()">模拟收到异议</button>';
+    if(!state.gongshiDone) html+='<button class="btn btn-primary" onclick="finishGongshi()">公示完成</button>';
+  }
+  html+='</div>';
+  if(state.yiyi){
+    html+='<div class="yiyi-box"><div class="yt"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>异议中（红色分支）</div>'+
+      '<div class="yd">异议内容：公示期内收到对张* 的实名异议（涉及现实表现）。<br>处置要求：须完成异议核查与处置，结案后方可继续流程。<br>处置记录：<span id="yyRec" style="color:var(--state-red-text)">待核查…</span></div>'+
+      '<div class="gs-actions"><button class="btn btn-primary" onclick="resolveYiyi()">异议处置完成</button></div></div>';
+  }
+  html+='</div>';
+  return html;
+}
+function simYiyi(){ state.yiyi=true; state.gongshiDone=false; renderStepBar(); selectNode(19); renderChecklist(); showToast('已模拟收到异议，进入<span class="red">红色分支</span>'); }
+function resolveYiyi(){ document.getElementById('yyRec').textContent='异议核查完毕，反映情况不属实，流程继续（留痕 YY-2026-019）。'; showToast('异议已结案，流程可继续（演示）'); state.yiyi=false; state.gongshiDone=true; renderStepBar(); selectNode(19); renderChecklist(); }
+function finishGongshi(){
+  state.gongshiDone=true; state.yiyi=false;
+  // 流程下推：节点19 完成，节点20 成为当前节点
+  const n19=NODES.find(x=>x.n===19); if(n19){ n19.st='done'; delete n19.cur; }
+  const n20=NODES.find(x=>x.n===20); if(n20){ n20.st='todo'; n20.cur=true; state.selected=20; }
+  renderStepBar(); selectNode(20); renderChecklist();
+  if(currentPersonId!=null){ renderPersonStepBar(); renderNodePanel(20); }
+  showToast('公示已完成，流程下推至节点20：<b>确定2名入党介绍人、填写《入党志愿书》</b>');
+}
+
+/* 倒计时 */
+const gsTarget = new Date(); gsTarget.setDate(gsTarget.getDate()+3); gsTarget.setHours(17,0,0,0);
+function tick(){
+  const now=new Date(); let diff=Math.max(0, gsTarget-now);
+  const d=Math.floor(diff/86400000); const h=Math.floor(diff%86400000/3600000); const m=Math.floor(diff%3600000/60000); const s=Math.floor(diff%60000/1000);
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=String(v).padStart(2,'0');};
+  set('cdD',d); set('cdH',h); set('cdM',m); set('cdS',s);
+}
+setInterval(tick,1000); tick();
+
+/* 校验清单：对齐 PRD 3.2.2 六类关键自动校验规则 */
+function renderChecklist(){
+  const items=[
+    {key:'age',   rule:'年龄自动校验', label:'申请人年满18周岁', pass:'已校验：满足', fail:'不满足（<18周岁）'},
+    {key:'full',  rule:'时长自动校验', label:'积极分子培养考察已满12个月', pass:'已满足（满12个月）', fail:'不足12个月，自动拦截'},
+    {key:'polit', rule:'政治审查',     label:'政审合格（材料齐全）', pass:'已通过', fail:'政审不合格，禁止进入下一环节'},
+    {key:'train', rule:'培训学时',     label:'短期集中培训≥24学时（3天）', pass:'已达标（28学时）', fail:'未达24学时，不得发展'},
+    {key:'gs',    rule:'法定公示',     label:'节点19 公示已完成且无异议', pass:'公示已完成·无异议', fail:'公示未完成 / 异议未结案'},
+    {key:'vote',  rule:'表决校验',     label:'到会半数以上且赞成超应到会半数', pass:'满足（到会/赞成达标）', fail:'到会或赞成不足，无法提交'}
+  ];
+  // 动态结算
+  const flag = RULE_FLAG;
+  items.forEach(it=>{
+    if(it.key==='gs') it.ok = state.gongshiDone && !state.yiyi;
+    else if(it.key==='train') it.ok = flag.train;        // 演示：培训学时默认未达标，拦截
+    else if(it.key==='age') it.ok = true;
+    else if(it.key==='full') it.ok = true;
+    else if(it.key==='polit') it.ok = true;
+    else if(it.key==='vote') it.ok = false;              // 演示：表决未满足（默认尚未召开大会）
+  });
+  const allOk = items.every(i=>i.ok);
+  const cl=document.getElementById('checklist');
+  cl.innerHTML=items.map(i=>(
+    '<div class="check-item '+(i.ok?'ok':'fail')+'"><span class="ci">'+(i.ok?'✓':'✕')+'</span>'+
+    '<span class="ct">'+i.label+'</span><span class="cr">'+(i.ok?i.pass:i.fail)+'</span></div>'
+  )).join('');
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=!allOk;
+  btn.textContent = allOk ? '提交当前节点' : '存在校验失败项，禁止提交';
+}
+function doSubmit(){
+  if(document.getElementById('submitBtn').disabled) return;
+  showToast('节点19 提交成功，进入<b>确定入党介绍人、填写《入党志愿书》</b>（演示）');
+}
+
+/* 六类关键自动校验规则卡 */
+function renderRuleGrid(){
+  const rules=[
+    {t:'1 · 年龄自动校验', d:'入党申请人须年满18周岁，系统自动校验出生日期。', ex:'不满足则无法提交申请。'},
+    {t:'2 · 时长自动校验', d:'入党积极分子培养考察须满12个月方可列为发展对象。', ex:'不足12个月系统自动拦截。'},
+    {t:'3 · 政治审查', d:'发展对象须通过政治审查，必传政审材料。', ex:'政审不合格者禁止进入下一环节。'},
+    {t:'4 · 培训学时', d:'短期集中培训不少于3天/24学时。', ex:'未达24学时不得发展（当前演示未达标）。'},
+    {t:'5 · 表决校验', d:'支部大会：有表决权正式党员到会半数以上方可开会，赞成票超应到会半数方可通过。', ex:'系统自动校验到会/赞成人数，不满足无法提交表决结果。'},
+    {t:'6 · 预备期校验', d:'预备期为1年，提前/延期转正须审批，延期最长不超1年。', ex:'党委审批3个月内，超时提醒。'}
+  ];
+  document.getElementById('ruleGrid').innerHTML=rules.map(r=>(
+    '<div class="rule-card"><div class="rc-t">'+r.t+'</div><div class="rc-d">'+r.d+'</div><div class="rc-ex">'+r.ex+'</div></div>'
+  )).join('');
+}
+function toggleTrain(){
+  RULE_FLAG.train=!RULE_FLAG.train;
+  document.getElementById('btnTrain').textContent = RULE_FLAG.train ? '✓ 模拟：集中培训学时已达标（28学时）' : '▶ 模拟：集中培训学时达标（当前未达标）';
+  renderChecklist();
+  showToast(RULE_FLAG.train ? '培训学时已达标，校验项「≥24学时」通过' : '培训学时未达标，校验项仍为失败（不得发展）');
+}
+
+/* 退回 / 终止 / 异议 — 异常处理（PRD 3.2.2 异常处理） */
+function confirmOp(title, warn){
+  document.getElementById('mcTitle').textContent=title;
+  const archiveNote = ' · 处置全程留痕（操作人、时间、原因、附件），写入审计日志并归入"发展党员材料归档包"异常处理卷。';
+  document.getElementById('mcWarn').textContent=warn + archiveNote;
+  if(title.indexOf('退回')>=0){
+    window._mcCb=()=>{ const nd=NODES.find(x=>x.n===state.selected); showToast('<b>退回上一节点</b> 已执行：'+nd.name+' 退回补充材料，留痕（演示）'); };
+  } else if(title.indexOf('终止')>=0){
+    window._mcCb=()=>{ showToast('<b>终止发展流程</b> 已执行：对象退出发展序列，原因归档、流程实例关闭（演示）'); };
+  } else {
+    window._mcCb=()=>showToast('<b>'+title+'</b> 已执行，归档留痕（演示）');
+  }
+  openModal('modalConfirm');
+}
+function confirmSubmit(){ const r=document.getElementById('mcReason').value.trim(); if(!r){ showToast('请填写原因后再确认'); return; } closeModal('modalConfirm'); if(window._mcCb) window._mcCb(); }
+
+/* 表决结果：节点输入项-表决结果（PRD 3.2.2） */
+function openVote(n){
+  window._voteNode=n;
+  const nd=NODES.find(x=>x.n===Number(n));
+  document.getElementById('voteTitle').textContent=(nd?('节点'+nd.n+' '+nd.name):'表决')+' · 表决结果录入';
+  document.getElementById('voteResult').style.display='none';
+  openModal('modalVote');
+}
+function submitVote(){
+  const total=Number(document.getElementById('voteTotal').value)||0;
+  const attend=Number(document.getElementById('voteAttend').value)||0;
+  const agree=Number(document.getElementById('voteAgree').value)||0;
+  const box=document.getElementById('voteResult');
+  // 校验：到会超半数、赞成超应到会半数
+  const attendOk = total>0 && attend > total/2;
+  const agreeOk  = total>0 && agree > total/2;
+  if(attendOk && agreeOk){
+    box.style.display='flex';
+    box.style.background='var(--state-green-bg)'; box.style.borderColor='#BFE3CC'; box.style.color='var(--state-green-text)';
+    box.innerHTML='<svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M5 13l4 4 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div>表决通过：到会 '+attend+'/'+total+'（超半数），赞成 '+agree+'/'+total+'（超半数）。结果已写入节点输入项并留存。</div>';
+    setTimeout(()=>{ closeModal('modalVote'); showToast('表决结果通过，已写入<b>节点'+window._voteNode+'</b>（演示）'); }, 1200);
+  } else {
+    box.style.display='flex';
+    box.style.background='#FCE9EB'; box.style.borderColor='#F3C6CC'; box.style.color='var(--state-red-text)';
+    const why=[]; if(!attendOk) why.push('实际到会未超应到会半数（开会法定人数不足）'); if(!agreeOk) why.push('赞成票未超应到会有表决权党员半数');
+    box.innerHTML='<svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div>表决不通过，无法提交：'+why.join('；')+'。</div>';
+  }
+}
+
+/* 节点详情面板（detail）：点击步骤条节点联动；含 完成/计划时间、状态、主办角色、法定前置、输入项概览、公示/表决标记、附件 */
+function renderNodePanel(n){
+  const nd=NODES.find(x=>x.n===n); if(!nd) return;
+  const d=NODE_DATES[n]||{};
+  const timeRow = d.date
+    ? '<span class="np-time-label">完成时间</span><b class="np-time val-done">'+d.date+'</b>'
+    : '<span class="np-time-label">计划时间</span><b class="np-time val-plan">'+ (d.plan||'待排期') +'</b>';
+  const flag = nd.gs ? '<span class="np-flag gs">法定公示</span>'
+            : (nd.vote ? '<span class="np-flag vote">须表决</span>' : '');
+  const inputsHtml = nd.inputs && nd.inputs.length
+    ? nd.inputs.map(i=>'<span class="np-input-tag '+(i.cat||'')+'">'+ (i.cat||'') +' · '+ i.name +'</span>').join('')
+    : '<span class="sub-note">本节点无录入材料</span>';
+  document.getElementById('npTitle').textContent='节点'+n+' '+nd.name;
+  document.getElementById('npSub').textContent = nd.st==='done'?'已完成' : (nd.st==='公示中'?'公示中' : '进行中/待办');
+  document.getElementById('nodePanel').innerHTML =
+    '<div class="np-head">'+
+      '<div class="np-status"><span class="sdot '+(nd.st==='done'?'green':nd.st==='公示中'?(state.yiyi?'red':'blue'):'gray')+'"></span>'+
+        (nd.st==='done'?'已办':(nd.st==='公示中'?'公示中':'待办'))+'</div>'+
+      flag+
+    '</div>'+
+    '<div class="np-time-row">'+timeRow+'</div>'+
+    '<div class="np-meta"><div><span class="np-k">主办角色</span><b>'+nd.role+'</b></div>'+
+      '<div><span class="np-k">法定前置</span><b>'+nd.pre+'</b></div>'+
+      '<div><span class="np-k">所属阶段</span><b>'+STAGES[nd.s]+'</b></div></div>'+
+    '<div class="np-ins"><div class="np-k">录入材料（输入项概览 · 只读）</div><div class="np-inputs">'+inputsHtml+'</div></div>'+
+    '<div class="np-foot" onclick="showToast(\'查看附件：节点'+n+' 材料（演示）\')"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M6 3h9l5 5v13H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>查看附件</div>';
+}
+
+/* 输出项①：发展党员进度台账（多对象 + 阶段进度） */
+const LEDGER=[
+  {name:'张*（第二党支部）', stage:'接收预备党员', cur:'节点19 接收预备党员前公示', prog:18, total:25, color:'blue'},
+  {name:'李*（第二党支部）', stage:'入党积极分子', cur:'节点9 支部每半年考察', prog:9, total:25, color:'green'},
+  {name:'王*（第三党支部）', stage:'发展对象', cur:'节点16 短期集中培训', prog:15, total:25, color:'gold'},
+  {name:'赵*（第一党支部）', stage:'预备党员转正', cur:'节点24 预备期考察', prog:23, total:25, color:'orange'},
+  {name:'陈*（第三党支部）', stage:'申请入党', cur:'节点2 支部派人谈话', prog:2, total:25, color:'gray'}
+];
+function renderLedger(filterStage){
+  const COLORMAP={red:'var(--brand-red)',gold:'var(--brand-gold)',orange:'var(--state-orange)',blue:'var(--brand-blue)',green:'var(--state-green)',gray:'var(--state-gray-dot)'};
+  const rows = LEDGER.filter(x=> !filterStage || x.stage===filterStage);
+  document.getElementById('ledger').innerHTML=rows.map(x=>{
+    const pct=Math.round(x.prog/x.total*100);
+    const pid = PERSONS.find(p=>p.name.indexOf(x.name.split('（')[0])===0)?.id ?? 0;
+    return '<div class="ledger-row" onclick="showView(\'person\','+pid+')" style="cursor:pointer">'+
+      '<div class="lr-top"><span class="lr-name">'+x.name+'</span><span class="tag '+x.color+'">'+x.stage+'</span><span class="lr-sub">'+x.cur+'</span></div>'+
+      '<div class="lr-track"><span style="width:'+pct+'%;background:'+(COLORMAP[x.color]||'var(--brand-blue)')+'"></span></div>'+
+      '<div class="lr-stages"><span>进度 '+x.prog+'/'+x.total+' 节点（'+pct+'%）</span><span>五阶段：申请→积极分子→发展对象→接收预备→转正 · <b style="color:var(--brand-blue)">查看详情 ›</b></span></div></div>';
+  }).join('') || '<div class="sub-note" style="padding:12px">该阶段暂无在办人员。</div>';
+}
+
+/* 人员数据（2级详情页下钻用）：name → 当前节点 n */
+const PERSONS=[
+  {id:0,name:'张*（第二党支部）', node:19, sub:'第二党支部 · 拟接收为预备党员'},
+  {id:1,name:'李*（第二党支部）', node:9,  sub:'第二党支部 · 入党积极分子考察期'},
+  {id:2,name:'王*（第三党支部）', node:16, sub:'第三党支部 · 发展对象培训期'},
+  {id:3,name:'赵*（第一党支部）', node:24, sub:'第一党支部 · 预备党员转正期'},
+  {id:4,name:'陈*（第三党支部）', node:2,  sub:'第三党支部 · 申请入党谈话期'}
+];
+
+/* 输出项②：节点超期预警清单（按节点规则自动识别） */
+const WARN=[
+  {who:'王*（第三党支部）', node:'节点23 党委审批', rule:'党委审批须在支部大会通过后 3 个月内完成', due:'已逾期 5 天', lvl:'red'},
+  {who:'陈*（第三党支部）', node:'节点2 支部派人谈话', rule:'收到入党申请书后 1 个月内派人谈话', due:'剩余 3 天', lvl:'orange'},
+  {who:'李*（第二党支部）', node:'节点7 入党积极分子公示', rule:'公示期不少于 5 个工作日，期满须及时归档', due:'剩余 1 个工作日', lvl:'orange'}
+];
+function renderWarnList(){
+  document.getElementById('warnList').innerHTML=WARN.map(w=>
+    '<div class="warn-item"><span class="wi">!</span><div><div class="wt">'+w.who+' · '+w.node+'</div><div class="wd">规则：'+w.rule+'<br>时效状态：<b>'+w.due+'</b></div></div></div>'
+  ).join('');
+}
+
+/* 输出项③：全套发展党员材料归档包（一键生成/下载） */
+const ARCHIVE=[
+  '入党申请书','谈话记录','推优/推荐材料','支委会决议','党委备案回执','培养考察材料','思想汇报（季度）',
+  '公示材料及异议核查单','政治审查材料','短期集中培训结业证书','《入党志愿书》','支部大会表决记录','党委审批文件',
+  '入党宣誓记录','预备期考察材料','转正申请及转正材料'
+];
+function renderArchive(){
+  const done=12; // 当前已归档 12/16
+  document.getElementById('archiveList').innerHTML=ARCHIVE.map((a,i)=>{
+    const ok=i<done;
+    return '<div class="archive-item"><span class="ai">'+(ok?'<svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M5 13l4 4 10-10" stroke="var(--state-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':'<svg viewBox="0 0 24 24" fill="none" width="12" height="12"><circle cx="12" cy="12" r="8" stroke="var(--text-secondary)" stroke-width="2"/></svg>')+'</span>'+(ok?a:'<span style="color:var(--text-secondary)">'+a+'（待归集）</span>')+'</div>';
+  }).join('');
+}
+function genArchive(){
+  const pct=100;
+  document.getElementById('archPct').textContent=pct+'%';
+  document.getElementById('archBar').style.width=pct+'%';
+  // 全部标记为已归集
+  document.getElementById('archiveList').innerHTML=ARCHIVE.map(a=>
+    '<div class="archive-item"><span class="ai"><svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M5 13l4 4 10-10" stroke="var(--state-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+a+'</div>'
+  ).join('');
+  showToast('已生成 <b>张*</b> 全套发展党员材料归档包（16 项，'+pct+'%），可下载（演示）');
+}
+
+/* 两级视图切换 + 2级人员详情渲染 */
+let currentPersonId = 0;
+function showView(view, personId){
+  if(view==='person'){
+    if(typeof personId==='number') currentPersonId=personId;
+    renderPerson(currentPersonId);
+    document.getElementById('view-overview').style.display='none';
+    document.getElementById('view-person').style.display='flex';
+    location.hash='#person-'+currentPersonId;
+    window.scrollTo(0,0);
+  } else {
+    if(document.getElementById('ledgerFilter').getAttribute('data-cur')) filterLedgerByStage(null);
+    document.getElementById('view-overview').style.display='flex';
+    document.getElementById('view-person').style.display='none';
+    location.hash='#overview';
+    window.scrollTo(0,0);
+  }
+}
+function renderPersonStepBar(){
+  // 个人步骤条（master）：节点可点击 → 联动右侧节点详情面板 renderNodePanel
+  const p=PERSONS[currentPersonId];
+  const bar=document.getElementById('pStepBar'); let html='';
+  STAGES.forEach((st,si)=>{
+    const ns=NODES.filter(x=>x.s===si);
+    html+='<div class="stage-row"><div class="stage-name">'+st+'</div><div class="stage-nodes">';
+    ns.forEach((nd,idx)=>{
+      const cls = nd.st==='done'?'green':nd.st==='公示中'?(state.yiyi?'red':'blue'):nd.st==='todo'?'gray':nd.st;
+      const sym = cls==='green'?'✓':(nd.n);
+      const active = nd.n===state.selected ? ' active':'';
+      html+='<div class="step clickable'+active+'" onclick="renderNodePanel('+nd.n+')"><div class="sdot '+cls+'">'+sym;
+      html+= nd.gs?'<span class="gs-badge">公示</span>':'';
+      html+='</div><div class="sname">'+nd.name+'</div></div>';
+      if(idx<ns.length-1) html+='<div class="line '+(nd.st==='done'?'done':'')+'"></div>';
+    });
+    html+='</div></div>';
+  });
+  bar.innerHTML=html;
+}
+function renderPerson(pid){
+  const p=PERSONS[pid];
+  document.getElementById('personCrumb').textContent=p.name+' 发展详情';
+  document.getElementById('personTitle').textContent=p.name+' · 发展详情';
+  document.getElementById('personSub').textContent=p.sub+' · PRD 3.2.2 该人员发展党员全链路办理';
+  document.getElementById('pStepTitle').textContent=p.name+' 个人发展步骤条';
+  // 该人员命中超期预警提示
+  const hit=WARN.find(w=>w.who.indexOf(p.name.split('（')[0])===0);
+  document.getElementById('personWarn').innerHTML = hit
+    ? '<div class="warn-item" style="margin-bottom:0"><span class="wi">!</span><div><div class="wt">'+p.name+' 命中超期预警</div><div class="wd">'+hit.node+'：'+hit.rule+'<br>时效状态：<b>'+hit.due+'</b></div></div></div>'
+    : '';
+  renderPersonStepBar();
+  state.selected=p.node;
+  renderNodePanel(p.node);   // 默认选中=当前节点，右侧面板展示含时间详情
+  renderStepBar();           // 保持概览页步骤条同步（不影响显示）
+  selectNode(p.node);
+  renderChecklist();
+  renderRuleGrid();
+  renderArchive();
+}
+
+/* init（置于所有 const 数据/函数声明之后，避免 TDZ） */
+let _initHash = (location.hash||'#overview').replace('#','');
+if(_initHash.indexOf('person-')===0){
+  const pid=parseInt(_initHash.split('-')[1],10); currentPersonId=isNaN(pid)?0:pid;
+}
+renderLedger(); renderWarnList();
+if(_initHash.indexOf('person-')===0){ showView('person', currentPersonId); }
+else { renderStepBar(); selectNode(19); renderChecklist(); renderRuleGrid(); renderArchive(); showView('overview'); }
+
+/* 侧栏手风琴：选中一级/二级菜单时，其余一级菜单自动收起 */
+function toggleNavGroup(el){ var g = el.closest('.nav-group'); if(!g) return; var open = g.classList.contains('collapsed'); document.querySelectorAll('.nav-group').forEach(function(x){ x.classList.add('collapsed'); }); if(open){ g.classList.remove('collapsed'); } }
+function navLeaf(el){ var pg = el.closest('.nav-group'); document.querySelectorAll('.nav-group').forEach(function(x){ if(x !== pg) x.classList.add('collapsed'); }); if(pg) pg.classList.remove('collapsed'); }
+</script>
+</body>
+</html>

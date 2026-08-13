@@ -1,0 +1,1915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>党费管理 · 党建管理系统</title>
+<!--
+  页面：12 党费管理（PRD 3.5 · PC · 党费分组主页）
+  设计系统：复用 设计令牌 的 :root 变量块；与 08/10/11 同构（侧栏/卡片/表格/抽屉/模态）。
+  结构（主区 2 个子标签）：
+    ① 党费核算与收缴（3.5.1）：中组部标准比例配置(可配置) + 基数核定任务(每年1月重核·手动录入+透明明细·年内变更审批) + 缴费台账(party_fee_detail: 应交/实缴/方式/状态/凭证/操作) + 登记缴费(线下)/补缴/减免申请(困难·离退休逐级审批)/电子凭证 + 连续6月未缴红色预警·自动催缴·同步书记
+    ② 党费使用、公示与对账（3.5.2）：分级审批(金额→层级·大额党委集体研究·关联票据) + 支出台账 + 季度/年度收支公示(自动生成·发布门户) + 逐级上缴(上缴单·自动对账) + 结余管理(收缴−上缴−使用−公示扣减·年度结转·变动留痕)
+  权限（角色矩阵 5.1）：超级管理员=全辖总览/配比例；党委=使用审批/上缴监管；党总支=使用初审/上缴监管；支部=核算/收缴登记/公示发布；普通党员=本人缴费/查记录。
+  交互：登记缴费、补缴、减免申请审批、电子凭证、催缴、支出申请审批、公示发布、上缴对账、hash 路由。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 520px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+
+/* 外壳 */
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; } .sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); } .sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 2px; }
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+.nav-sub .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-sub .nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-sub .nav-item.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+.role-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--state-blue-bg); color: var(--state-blue-text); font-size: 11px; font-weight: 600; }
+
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); flex: 1; min-height: 0; min-width: 0; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+
+/* 子标签（主区） */
+.sub-tabs { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; align-self: flex-start; }
+.sub-tab { height: 32px; padding: 0 16px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-secondary); font-weight: 500; transition: all .12s ease; }
+.sub-tab:hover { color: var(--text-primary); background: var(--bg-page); }
+.sub-tab.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.tab-panel { display: flex; flex-direction: column; gap: var(--card-gap); }
+.tab-panel.hidden { display: none; }
+/* 党费明细清单：固定定位覆盖主内容区，确保占满可视高度，不再依赖 .content flex 链 */
+#panel-detail {
+  position: fixed;
+  top: var(--topbar-height);
+  left: var(--nav-width);
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  background: var(--bg-page);
+  padding: var(--content-padding);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#panel-detail.hidden { display: none; }
+#panel-detail > .card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#panel-detail .card-b {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#panel-detail .table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+#panel-detail table.tb {
+  width: 100%;
+  min-width: auto;
+  table-layout: auto;
+}
+#panel-detail table.tb th,
+#panel-detail table.tb td {
+  min-width: auto;
+  padding: 8px 6px;
+  font-size: 12px;
+  white-space: normal;
+  word-break: break-all;
+  vertical-align: middle;
+}
+#panel-detail table.tb th {
+  white-space: nowrap;
+}
+#panel-detail table.tb td .tag {
+  white-space: nowrap;
+}
+#panel-detail table.tb .name-cell .av { width: 22px; height: 22px; font-size: 10px; }
+#panel-detail .audit-pending-bar { display: flex; align-items: center; gap: 10px; background: var(--state-orange-bg); color: var(--state-orange-text); border-radius: var(--radius-md); padding: 8px 12px; font-size: 13px; margin-bottom: 10px; }
+#panel-detail table.tb td a.link { color: var(--brand-blue); text-decoration: none; font-weight: 500; }
+#panel-detail table.tb td a.link:hover { text-decoration: underline; }
+#panel-detail table.tb td:last-child { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+
+/* 按钮 / tag */
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-primary:disabled { background: var(--state-gray-dot); cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.btn-danger { background: #fff; color: var(--state-red-text); border-color: var(--state-red-bg); } .btn-danger:hover { background: var(--state-red-bg); }
+.btn-sm { height: 28px; padding: 0 12px; font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); }
+.tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); }
+.tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gold { background: #FCF2DD; color: #9A6B12; }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); gap: 10px; flex-wrap: wrap; }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-5); display: flex; flex-direction: column; gap: 6px; }
+.kpi .lbl { font-size: var(--fs-caption); color: var(--text-secondary); }
+.kpi .num { font-size: var(--fs-flip); font-weight: 700; line-height: 1; font-family: var(--font-num); }
+.kpi .num.red { color: var(--brand-red); } .kpi .num.blue { color: var(--brand-blue); } .kpi .num.green { color: var(--state-green); } .kpi .num.gold { color: var(--brand-gold); }
+.kpi .trend { font-size: var(--fs-caption); color: var(--text-secondary); }
+
+/* 指标条 */
+.metric-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--card-gap); }
+.metric { padding: var(--space-4); border-left: 3px solid var(--brand-blue); background: var(--state-blue-bg); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+.metric.warn { border-left-color: var(--state-orange); background: var(--state-orange-bg); }
+.metric.risk { border-left-color: var(--brand-red); background: var(--state-red-bg); }
+.metric.ok { border-left-color: var(--state-green); background: var(--state-green-bg); }
+.metric .m-t { font-size: var(--fs-caption); color: var(--text-secondary); }
+.metric .m-v { font-size: 18px; font-weight: 700; font-family: var(--font-num); }
+
+/* 流程步骤条（横向） */
+.flow-strip { display: flex; align-items: flex-start; gap: 0; overflow-x: auto; padding-bottom: 6px; }
+.flow-step { flex: 1; min-width: 92px; text-align: center; position: relative; }
+.flow-step .fs-dot { width: 24px; height: 24px; border-radius: 50%; margin: 0 auto 6px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--state-gray-dot); position: relative; z-index: 1; }
+.flow-step.done .fs-dot { background: var(--state-green); }
+.flow-step.cur .fs-dot { background: var(--brand-red); box-shadow: 0 0 0 3px rgba(194,31,48,0.18); }
+.flow-step .fs-name { font-size: 12px; font-weight: 600; }
+.flow-step .fs-d { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.flow-step::before { content: ""; position: absolute; top: 12px; left: -50%; width: 100%; height: 2px; background: var(--border-color); z-index: 0; }
+.flow-step:first-child::before { display: none; }
+.flow-step.done::before, .flow-step.cur::before { background: var(--state-green); }
+
+/* 筛选区 */
+.filters { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.filters select, .filters input { height: 32px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 10px; font-size: 13px; background: var(--bg-card); color: var(--text-primary); }
+.filters input { min-width: 160px; }
+.filters select:focus, .filters input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table.tb { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.tb thead th { text-align: left; padding: 10px var(--space-4); background: var(--bg-page); color: var(--text-secondary); font-weight: 600; font-size: var(--fs-caption); border-bottom: 1px solid var(--border-color); white-space: nowrap; position: sticky; top: 0; }
+table.tb tbody td { padding: 11px var(--space-4); border-bottom: 1px solid var(--border-light); vertical-align: middle; white-space: nowrap; }
+table.tb tbody tr:hover { background: var(--bg-page); }
+table.tb tbody td .name-cell { display: flex; align-items: center; gap: 8px; }
+table.tb tbody td .name-cell .av { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 600; flex: none; }
+.mono { font-family: var(--font-num); }
+.muted { color: var(--text-secondary); font-size: 12px; }
+.pager { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-4); font-size: var(--fs-caption); color: var(--text-secondary); }
+.pager .pg-btn { height: 28px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #fff; font-size: 13px; }
+.pager .pg-btn:disabled { color: var(--state-gray-dot); cursor: not-allowed; }
+
+/* 通用 kv */
+.kv-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px dashed var(--border-light); font-size: var(--fs-body); }
+.kv-row .k { color: var(--text-secondary); min-width: 96px; flex: none; }
+.kv-row .v { color: var(--text-primary); font-weight: 500; }
+.kv-row.col { flex-direction: column; align-items: flex-start; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* 抽屉 */
+.drawer-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.42); display: none; z-index: 300; }
+.drawer-mask.open { display: block; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: var(--aside-width); max-width: 94vw; background: var(--bg-card); box-shadow: var(--shadow-md); transform: translateX(100%); transition: transform .24s ease; z-index: 301; display: flex; flex-direction: column; }
+.drawer-mask.open .drawer { transform: translateX(0); }
+.drawer .dh { height: var(--topbar-height); display: flex; align-items: center; padding: 0 var(--space-5); border-bottom: 1px solid var(--border-color); gap: 10px; }
+.drawer .dh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.drawer .dh .x { width: 32px; height: 32px; border: none; background: transparent; border-radius: var(--radius-md); display: grid; place-items: center; color: var(--text-secondary); }
+.drawer .dh .x:hover { background: var(--bg-page); }
+.drawer .db { flex: 1; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-5); }
+/* 抽屉工具：openDrawer/closeDrawer 直接作用于 .drawer（兼容无遮罩场景，与 .drawer-mask.open 并存） */
+.drawer.open { transform: translateX(0); }
+
+/* 抽屉内操作日志卡片 */
+.oper-log-item { border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: var(--space-4); background: var(--bg-page); }
+.oper-log-item + .oper-log-item { margin-top: var(--space-4); }
+.ol-h { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 8px; }
+.ol-time { font-family: var(--font-mono, monospace); color: var(--text-secondary); font-size: 12px; }
+.ol-operator { color: var(--text-primary); font-weight: 500; font-size: 13px; }
+.ol-body { font-size: 13px; color: var(--text-primary); line-height: 1.6; }
+.ol-body > div { margin-top: 4px; }
+.ol-detail { color: var(--text-secondary); word-break: break-all; }
+
+/* 抽屉内分区（单栏，避免窄抽屉双列挤压） */
+.drawer-section { display: flex; flex-direction: column; gap: var(--space-4); }
+.drawer-section h4 { font-size: 15px; font-weight: 600; margin: 0; color: var(--text-primary); }
+.drawer-section .audit-item { align-items: flex-start; }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(15,27,45,0.45); display: none; align-items: center; justify-content: center; z-index: 400; padding: var(--space-4); }
+.modal-mask.open { display: flex; }
+.modal { width: 560px; max-width: 100%; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; animation: pop .18s ease; }
+@keyframes pop { from { transform: scale(.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal .mh { display: flex; align-items: center; padding: var(--space-5); border-bottom: 1px solid var(--border-light); }
+.modal .mh h3 { font-size: var(--fs-module); font-weight: 600; flex: 1; }
+.modal .mb { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.modal .mf { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-light); background: var(--bg-page); }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 600; }
+.field select, .field textarea, .field input { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 10px; font-size: var(--fs-body); font-family: inherit; background: #fff; color: var(--text-primary); }
+.field textarea { min-height: 80px; resize: vertical; }
+.field select:focus, .field textarea:focus, .field input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.hidden { display: none !important; }
+
+/* 审核/批阅 列表 */
+.audit-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.audit-item { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: 10px; }
+.audit-item .ai-main { flex: 1; min-width: 0; }
+.audit-item .ai-main .nm { font-weight: 600; }
+.audit-item .ai-main .ds { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.audit-item .ai-act { display: flex; gap: 8px; flex: none; }
+
+/* 进度条 */
+.prog { height: 8px; background: var(--bg-page); border-radius: var(--radius-pill); overflow: hidden; min-width: 90px; }
+.prog > i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--brand-blue); }
+.prog.low > i { background: var(--state-orange); }
+.prog.bad > i { background: var(--brand-red); }
+
+.warn-banner { display: flex; align-items: center; gap: 10px; background: var(--state-red-bg); color: var(--state-red-text); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; margin-bottom: var(--space-4); }
+.warn-banner.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.warn-banner svg { width: 18px; height: 18px; flex: none; }
+.check-result { border-radius: var(--radius-md); padding: 12px 14px; font-size: 13px; }
+.check-result.ok { background: var(--state-green-bg); color: var(--state-green-text); }
+.check-result.block { background: var(--state-red-bg); color: var(--state-red-text); }
+.batch-tip { background: var(--state-blue-bg); color: var(--state-blue-text); border-radius: var(--radius-md); padding: 10px 14px; font-size: 13px; font-weight: 600; }
+.empty { text-align: center; color: var(--text-secondary); padding: var(--space-6) 0; font-size: 13px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; transition: all .22s ease; z-index: 500; pointer-events: none; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="logo"><div class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.2 4.8L19 8.3l-3.5 3.4.9 4.9L12 14.6 7.6 16.6l.9-4.9L5 8.3l4.8-.5L12 3z" fill="#fff"/></svg></div><div class="t">智慧党建<small>党建管理系统</small></div></div>
+  <nav class="nav">
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">首页</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><circle cx="17" cy="9" r="2.4" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M15 14.5a4.5 4.5 0 019 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed" id="grp-relation">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 7h7v10H4zM13 7h7v10h-7M8 12h8" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 7l-3-3M17 17l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">关系变动管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#movable" onclick="navLeaf(this)">流动党员与党籍异动管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织生活管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+        <a class="nav-item" href="10-组织生活管理.html#demo" onclick="navLeaf(this)">民主生活会</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h7v14H4zM13 5h7v14h-7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <!-- 党费管理（本模块分组） -->
+    <div class="nav-group active" id="grp-fee">
+      <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#config" onclick="navLeaf(this)">党费缴纳配置</a>
+        <a class="nav-item active" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M3 5h18v12H8l-4 4V5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">宣传与思想阵地</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="13-宣传与思想阵地.html#portal" onclick="navLeaf(this)">党建资讯门户</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#honor" onclick="navLeaf(this)">党建风采展示</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#red" onclick="navLeaf(this)">红色教育资源</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><span class="ng-label">特色业务</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="14-特色业务.html#report" onclick="navLeaf(this)">双报到双服务</a>
+        <a class="nav-item" href="14-特色业务.html#vol" onclick="navLeaf(this)">志愿服务</a>
+        <a class="nav-item" href="14-特色业务.html#fact" onclick="navLeaf(this)">我为群众办实事</a>
+        <a class="nav-item" href="14-特色业务.html#fusion" onclick="navLeaf(this)">党建+业务融合</a>
+        <a class="nav-item" href="14-特色业务.html#brand" onclick="navLeaf(this)">党建品牌创建</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M19 12a7 7 0 00-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 00-2.2-1.3L16 3H8l-.4 2.5A7 7 0 005.4 6.8l-2.3-1-2 3.4 2 1.5A7 7 0 003 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 002.2 1.3L8 21h8l.4-2.5a7 7 0 002.2-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg><span class="ng-label">系统管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="15-系统管理.html#role" onclick="navLeaf(this)">权限与角色管理</a>
+        <a class="nav-item" href="15-系统管理.html#msg" onclick="navLeaf(this)">消息中心</a>
+        <a class="nav-item" href="15-系统管理.html#export" onclick="navLeaf(this)">台账导出引擎</a>
+        <a class="nav-item" href="15-系统管理.html#config" onclick="navLeaf(this)">系统配置</a>
+        <a class="nav-item" href="15-系统管理.html#cert" onclick="navLeaf(this)">党员证明开具</a>
+      </div>
+    </div>
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<!-- ===== 主区 ===== -->
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">党费管理 <span>/</span> <b id="crumbActive">党费核算与收缴</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input id="topSearch" placeholder="搜索党员 / 凭证号 / 支出项目"></div>
+    <div class="top-actions">
+      <button class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>中共XX街道机关支部</button>
+      <button class="icon-btn" title="消息"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16v10H8l-4 4V6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="dot">5</span></button>
+      <div class="user"><div class="avatar">王</div><div><div class="nm">王*（支部管理员）</div><div class="role">组织委员</div></div></div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-head">
+      <div><h1>党费管理</h1><div class="sub">覆盖 PRD 3.5：中组部标准核算与基数核定、减免与收缴催缴闭环、党费使用分级审批与公示上缴对账、结余全程留痕。</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" onclick="exportLedger()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>导出党费台账</button>
+      </div>
+    </div>
+
+    <!-- 顶部子标签已移至左侧导航：党费缴纳配置 / 党费核算与收缴 / 党费使用公示与对账 -->
+
+    <!-- ================= 二级页面① 党费缴纳配置 ================= -->
+    <div class="tab-panel hidden" id="panel-config">
+
+      <!-- 核算规则配置（入口：右侧抽屉查看/编辑，原卡片内容整体迁入 #drawer-calc） -->
+      <div class="card">
+        <div class="card-h"><h2>核算规则配置</h2><span class="sub-note">中组部标准 · 比例可配置 · 每年1月重核基数</span>
+          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="openCalcDrawer()"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>查看/编辑核算规则配置</button>
+        </div>
+        <div class="card-b">
+          <div class="sub-note">两种缴纳方式：① 按工资基数缴纳（税后工资 × 对应比例，比例可配置、年内原则不变）；② 企业当月不发工资时按 <span style="color:var(--brand-red);font-weight:600">基础党费 0.2 元/月</span> 缴纳。比例表、年度基数核定、系统参数与方案二开关请在「核算规则配置」抽屉中查看 / 编辑。</div>
+        </div>
+      </div>
+
+      <!-- 党费缴纳配置（人员核算方法 · 台账数据源） -->
+      <div class="card">
+        <div class="card-h">
+          <h2>党费缴纳配置</h2>
+          <span class="sub-note">通用配置（一次性设置 · 逐月计算）· 台账生成数据源</span>
+          <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="syncRosterBtn()"><svg viewBox="0 0 24 24" fill="none"><path d="M16 7a4 4 0 1 0-8 0M4 21a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>同步名册</button>
+            <button class="btn btn-secondary btn-sm" id="btnBatch" onclick="openBatch()" disabled><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>批量修改（0）</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadCfgTemplate()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>下载模板</button>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cfgFile').click()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>导入</button>
+            <input type="file" id="cfgFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importCfgFile(this)">
+            <button class="btn btn-secondary btn-sm" onclick="openOperLogDrawer()"><svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>操作日志</button>
+            <button class="btn btn-primary btn-sm" onclick="openConfigModal()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>新增配置</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="filters" style="margin-bottom:12px">
+            <select id="cfOrg" onchange="renderConfig()"><option value="">全部党组织</option><option>机关支部</option></select>
+            <select id="cfType" onchange="renderConfig()"><option value="">全部类型</option><option value="salary">按工资基数缴纳</option><option value="basic">按基础党费缴纳</option><option value="pending">待完善（新增）</option></select>
+          </div>
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th style="width:36px;text-align:center"><input type="checkbox" id="cfgCheckAll" onchange="toggleAllCfg(this)" title="全选"></th><th>党员</th><th>所属党组织</th><th>在职状态</th><th>缴纳类型</th><th>工资基数(税后)</th><th>应缴金额(元/月)</th><th>起缴责任月</th><th>生效月份</th><th>创建时间</th><th>变更原因</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="cfgBody"></tbody>
+            </table>
+          </div>
+          <div class="sub-note" style="margin-top:10px">配置即「谁·按什么方法·缴多少」，为<b>通用主数据（不按月度存储）</b>，逐月台账均按此配置计算。点击「同步名册」可将名册中<b>新转正/新转入党员自动纳入并仅带入「党员·所属党组织·起缴责任月」，其余字段标记「待完善」需编辑补充</b>；勾选记录可「批量修改」缴纳类型与工资基数；支持 Excel/CSV 模板导入；点击「生成当前月台账」按本表启用核算方法生成明细台账草稿，「待完善」人员不纳入。<b>生效月份</b>即变更次月生效、切换缴纳类型须填<b>变更原因</b>（操作留痕）；<b>在职状态</b>只读同步党员档案（方案二）。操作日志请点击右上角「操作日志」在右侧抽屉查看。</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= 二级页面② 党费核算与收缴 ================= -->
+    <div class="tab-panel" id="panel-calc">
+      <div class="kpis" id="kpis"></div>
+
+      <!-- 党费汇总台账（超管视角） -->
+      <div class="card">
+        <div class="card-h">
+          <h2>党费汇总台账</h2>
+          <span class="sub-note">超管 / 党委视角 · 按组织维度汇总 · 点击「查看明细」下钻</span>
+          <div class="filters" style="margin-left:auto">
+            <select id="sMonth" onchange="renderSummary()"><option value="2026-08">2026-08（已出账）</option><option value="2026-09">2026-09（生成草稿）</option></select>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="groupEmp" onchange="renderSummary()" style="width:15px;height:15px"> 按在职状态分组（方案二）</label>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>党组织名称</th><th>所属月份</th><th>应交人数</th><th>实缴人数</th><th>未缴人数</th><th>应缴金额(元)</th><th>实缴金额(元)</th><th>欠缴总额(元)</th><th>缴纳率</th><th>状态</th><th>生成时间</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="sumBody"></tbody>
+            </table>
+          </div>
+          <div class="sub-note" style="margin-top:10px">汇总数据由「党费缴纳配置」生成的明细台账自动聚合：实缴含已缴 / 补缴 / 审核通过项；差额 = 应缴 − 实缴。支部管理员仅见本组织，超管 / 党委见全辖汇总。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 子标签② 党费使用、公示与对账 ================= -->
+    <div class="tab-panel hidden" id="panel-use">
+
+      <!-- 分级审批说明 + 支出申请 -->
+      <div class="card">
+        <div class="card-h"><h2>党费使用分级审批</h2><button class="btn btn-primary btn-sm" onclick="openExpenseModal()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>发起支出申请</button></div>
+        <div class="card-b">
+          <div class="metric-strip" style="margin-bottom:var(--space-5)">
+            <div class="metric"><div class="m-t">≤ 1000 元</div><div class="m-v">支部审批</div></div>
+            <div class="metric warn"><div class="m-t">1000 – 5000 元</div><div class="m-v">党总支审批</div></div>
+            <div class="metric risk"><div class="m-t">≥ 20000 元</div><div class="m-v">党委集体研究</div></div>
+          </div>
+          <div class="sub-note">每笔支出必须关联票据；大额支出需党委集体研究，按金额自动匹配审批层级。<span class="muted">（5000–20000 元由党委审批）</span></div>
+        </div>
+      </div>
+
+      <!-- 支出台账 -->
+      <div class="card">
+        <div class="card-h"><h2>党费支出台账</h2><span class="sub-note">关联票据 · 审批层级留痕</span></div>
+        <div class="card-b">
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>单据号</th><th>支出项目</th><th>金额(元)</th><th>审批层级</th><th>票据</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="expBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 收支公示 + 逐级上缴 -->
+      <div class="card">
+        <div class="card-h"><h2>收支公示与逐级上缴</h2><span class="sub-note">季度/年度自动生成公示表 · 支部按月/季上缴 · 自动对账</span></div>
+        <div class="card-b" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-6)">
+          <div>
+            <div class="sub-note" style="margin-bottom:8px">收支公示表（发布至党建门户）</div>
+            <div class="table-wrap">
+              <table class="tb">
+                <thead><tr><th>公示周期</th><th>收入</th><th>使用</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+                <tbody id="pubBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <div class="sub-note" style="margin-bottom:8px">逐级上缴单（系统生成·自动对账）</div>
+            <div class="table-wrap">
+              <table class="tb">
+                <thead><tr><th>上缴单号</th><th>周期</th><th>金额(元)</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+                <tbody id="payupBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 结余管理 -->
+      <div class="card">
+        <div class="card-h"><h2>党费结余管理</h2><span class="sub-note">结余 = 收缴总额 − 上缴 − 使用 − 公示扣减 · 年度结转留痕</span></div>
+        <div class="card-b" id="balanceBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 缴费明细抽屉 -->
+<div class="drawer-mask" id="feeDrawer"><div class="drawer">
+  <div class="dh"><h3 id="feeDrawerTitle">党费缴费明细</h3><button class="x" onclick="closeMask('feeDrawer')">✕</button></div>
+  <div class="db" id="feeDrawerBody"></div>
+</div></div>
+
+<!-- 电子凭证抽屉 -->
+<div class="drawer-mask" id="voucherDrawer"><div class="drawer">
+  <div class="dh"><h3>党费缴纳电子凭证</h3><button class="x" onclick="closeMask('voucherDrawer')">✕</button></div>
+  <div class="db" id="voucherBody"></div>
+</div></div>
+
+<!-- 核算规则配置抽屉（原卡片内容整体迁入，id 保持不变：#rateTb / #spBaseFee / #spGenDay / #spBackfill / #empCalcSwitch） -->
+<div class="drawer-mask" id="calcDrawerMask" onclick="if(event.target===this) closeDrawer('drawer-calc')">
+  <div class="drawer" id="drawer-calc">
+    <div class="dh"><h3>核算规则配置</h3><button class="x" onclick="closeDrawer('drawer-calc')">✕</button></div>
+    <div class="db">
+      <section class="drawer-section">
+        <h4>缴纳方式与比例</h4>
+        <div class="sub-note">两种缴纳方式：① 按工资基数缴纳（税后工资 × 对应比例，比例可配置、年内原则不变）；② 企业当月不发工资时按 <span style="color:var(--brand-red);font-weight:600">基础党费 0.2 元/月</span> 缴纳。每月由管理员在「党费缴纳配置」中手动设置人员核算方法，作为台账生成的数据源。</div>
+        <div class="table-wrap">
+          <table class="tb" id="rateTb">
+            <thead><tr><th>月工资收入（税后）</th><th>交纳比例</th><th>配置</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <h4>年度基数核定任务</h4>
+        <div class="audit-item" style="border-color:var(--brand-blue)">
+          <div class="ai-main">
+            <div class="nm">2026 年度党费基数重核</div>
+            <div class="ds">系统每年1月发起，逐级确认后生效；未对接人事/财务（一期）由支部管理员手动录入工资基数并选比例，党员端可查看"基数×比例"计算明细。</div>
+          </div>
+          <div class="ai-act"><span class="tag green">已生效</span></div>
+        </div>
+        <div class="kv-row"><span class="k">核定年度</span><span class="v">2026 年</span></div>
+        <div class="kv-row"><span class="k">生效范围</span><span class="v">本支部 34 名党员</span></div>
+        <div class="kv-row"><span class="k">年内调整</span><span class="v">须走变更审批（党工委备案）</span></div>
+        <div class="warn-banner orange" style="margin:0">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>
+          对接人事/财务系统后，基数改为自动同步并锁定手动修改。
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <h4>系统参数</h4>
+        <div class="sub-note">PRD §4.4.2 · 可配置</div>
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field"><label>基础党费金额（元/月）</label><input id="spBaseFee" type="number" step="0.01" value="0.20" min="0"></div>
+          <div class="field"><label>每月生成台账日</label><input id="spGenDay" type="number" value="1" min="1" max="28"></div>
+        </div>
+        <div class="field" style="margin-bottom:10px"><label>允许补录最大月份跨度（月）</label><input id="spBackfill" type="number" value="12" min="1" max="36"></div>
+        <button class="btn btn-primary btn-sm" onclick="saveSystemParams()"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>保存系统参数</button>
+        <div class="sub-note" style="margin-top:8px">基础党费用于「企业当月不发工资」场景；补录跨度限制当年内台账补录，已封存台账不可补录。</div>
+      </section>
+
+      <section class="drawer-section">
+        <h4>方案二：在职状态核算判定</h4>
+        <div class="audit-item" style="border-color:var(--brand-blue)">
+          <div class="ai-main">
+            <div class="nm">以「在职状态」作为核算判定入口</div>
+            <div class="ds">开启后：在岗=基数×比例；下岗/停薪留职/长期病假=基础党费 0.2 元；离退休沿用原配置。与方案一可并行（在职状态默认判定，党费缴纳类型人工覆盖）。</div>
+          </div>
+          <div class="ai-act">
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="empCalcSwitch" onchange="toggleEmpCalc(this)" style="width:16px;height:16px"> 启用</label>
+          </div>
+        </div>
+        <div class="sub-note">当前采用方案一（党费缴纳配置 method 为判定来源）。</div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- 操作日志抽屉 -->
+<div class="drawer-mask" id="operlogMask" onclick="if(event.target===this) closeDrawer('drawer-operlog')">
+  <div class="drawer" id="drawer-operlog">
+    <div class="dh"><h3>操作日志</h3><button class="x" onclick="closeDrawer('drawer-operlog')">✕</button></div>
+    <div class="db" id="operLogBody"></div>
+  </div>
+</div>
+
+<!-- 逾期催缴与红色预警抽屉 -->
+<div class="drawer-mask" id="urgeMask" onclick="if(event.target===this) closeDrawer('drawer-urge')">
+  <div class="drawer" id="drawer-urge">
+    <div class="dh"><h3>逾期催缴与红色预警</h3><button class="x" onclick="closeDrawer('drawer-urge')">✕</button></div>
+    <div class="db" id="urgeDrawerBody">
+      <div class="sub-note" id="urgeDrawerNote">每月1–15日缴费期 · 连续6个月未缴触发红色预警·同步书记</div>
+      <div id="urgeDrawerContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 减免申请模态 -->
+<div class="modal-mask" id="reduceModal"><div class="modal">
+  <div class="mh"><h3>党费减免申请</h3><button class="x" onclick="closeMask('reduceModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field"><label>减免对象</label><input id="rdName" disabled></div>
+    <div class="field"><label>减免类型</label><select id="rdType"><option value="困难党员">困难党员</option><option value="离退休党员">离退休党员</option></select></div>
+    <div class="field"><label>减免后标准（元/月）</label><input id="rdAmount" type="number" value="0" min="0"></div>
+    <div class="field"><label>申请说明</label><textarea id="rdNote" placeholder="说明困难情形或离退休情况，提交后逐级审批"></textarea></div>
+    <div class="check-result ok" id="rdCheck">提交后进入"支部→党总支→党委"逐级审批，审批通过后按新标准核算并留痕。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('reduceModal')">取消</button><button class="btn btn-primary" onclick="submitReduction()">提交审批</button></div>
+</div></div>
+
+<!-- 支出申请模态 -->
+<div class="modal-mask" id="expenseModal"><div class="modal">
+  <div class="mh"><h3>党费支出申请</h3><button class="x" onclick="closeMask('expenseModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field"><label>支出项目</label><input id="exItem" placeholder="如：购买党员学习书籍"></div>
+    <div class="field-row">
+      <div class="field"><label>金额(元)</label><input id="exAmount" type="number" value="800" min="1"></div>
+      <div class="field"><label>支出类别</label><select id="exCat"><option>教育活动</option><option>学习资料</option><option>关爱帮扶</option><option>阵地建设</option></select></div>
+    </div>
+    <div class="field"><label>关联票据</label><input id="exInvoice" placeholder="上传或录入票据编号（必填）"></div>
+    <div class="field"><label>说明</label><textarea id="exNote" placeholder="用途说明，符合党费使用范围"></textarea></div>
+    <div class="check-result ok" id="exCheck">将按金额自动匹配审批层级，提交后进入对应审批流。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('expenseModal')">取消</button><button class="btn btn-primary" onclick="submitExpense()">提交申请</button></div>
+</div></div>
+
+<!-- 党费明细清单（汇总台账下钻 · 独立二级页面，不使用侧边抽屉） -->
+<div class="tab-panel hidden" id="panel-detail">
+  <div class="card">
+    <div class="card-h">
+      <h2 id="detailTitle">党费明细清单</h2>
+      <span class="sub-note">汇总台账下钻 · 支持审核 / 登记 / 补缴 / 减免 / 补录等操作</span>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="openUrgeDrawer()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg>逾期催缴与红色预警</button>
+        <button class="btn btn-ghost btn-sm" onclick="switchView('calc')">← 返回汇总台账</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="filters" style="margin-bottom:12px">
+        <select id="dStatus" onchange="renderDetail()">
+          <option value="">全部缴纳状态</option><option value="未缴">未缴</option><option value="待审核">待审核</option><option value="已缴">已缴</option><option value="补缴">补缴</option><option value="减免">减免</option><option value="欠缴">欠缴</option>
+        </select>
+        <select id="dAudit" onchange="renderDetail()">
+          <option value="">全部审核状态</option><option value="无需审核">无需审核</option><option value="待审核">待审核</option><option value="已通过">已通过</option><option value="已驳回">已驳回</option>
+        </select>
+        <select id="dOverdue" onchange="renderDetail()">
+          <option value="">全部逾期状态</option><option value="normal">正常</option><option value="overdue">逾期(1-5月)</option><option value="red">红色预警(≥6月)</option>
+        </select>
+        <select id="dPayType" onchange="renderDetail()">
+          <option value="">全部缴纳类型</option><option value="BASE_SALARY">按工资基数</option><option value="BASE_FEE">按基础党费</option>
+        </select>
+        <select id="dEmp" onchange="renderDetail()">
+          <option value="">全部在职状态</option><option value="在岗">在岗</option><option value="下岗">下岗</option><option value="停薪留职">停薪留职</option><option value="长期病假">长期病假</option><option value="离退休">离退休</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="openSupplement()"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>补录台账</button>
+      </div>
+      <div id="detailAuditBar"></div>
+      <div class="table-wrap">
+        <table class="tb">
+          <thead><tr><th>姓名</th><th>在职状态</th><th>缴纳状态</th><th>审核状态</th><th>缴纳类型</th><th>逾期</th><th>起缴责任月</th><th>通知</th><th>应缴(元)</th><th>凭证</th><th style="text-align:right">操作</th></tr></thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 台账补录模态 -->
+<div class="modal-mask" id="supplementModal"><div class="modal">
+  <div class="mh"><h3>台账补录（新转入 / 新转正党员）</h3><button class="x" onclick="closeMask('supplementModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field-row">
+      <div class="field"><label>所属月份</label><select id="spMonth"><option>2026-08</option><option>2026-09</option></select></div>
+      <div class="field"><label>党员</label><select id="spMember"></select></div>
+    </div>
+    <div class="field"><label>生成说明</label><textarea id="spNote" placeholder="如：本月新转正党员，自起缴责任月起补生成台账记录"></textarea></div>
+    <div class="check-result ok" id="spCheck">将按该党员在「党费缴纳配置」中的核算方法自动测算应缴金额，补入对应月份明细台账，并同步更新汇总。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('supplementModal')">取消</button><button class="btn btn-primary" onclick="submitSupplement()">确认补录</button></div>
+</div></div>
+
+<!-- 党费缴纳配置模态 -->
+<div class="modal-mask" id="configModal"><div class="modal">
+  <div class="mh"><h3 id="cfgModalTitle">新增党费缴纳配置</h3><button class="x" onclick="closeMask('configModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field"><label>党员姓名</label><input id="cfName" placeholder="如：孙强" oninput="onCfgNameInput()"></div>
+    <div class="field-row">
+      <div class="field"><label>所属党组织</label><select id="cfOrgInput"><option>机关支部</option></select></div>
+      <div class="field"><label>在职状态（同步档案·只读）</label><select id="cfEmp" disabled><option>在岗</option><option>下岗</option><option>停薪留职</option><option>长期病假</option><option>离退休</option></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>缴纳类型</label><select id="cfMethod" onchange="onMethodChange()"><option value="salary">按工资基数缴纳</option><option value="basic">按基础党费缴纳（0.2元/月）</option></select></div>
+      <div class="field"><label>生效月份（次月生效）</label><input id="cfEffMonth" placeholder="如 2026-09"></div>
+    </div>
+    <div class="field" id="cfBaseField"><label>工资基数（税后，元）</label><input id="cfBase" type="number" value="0" min="0" oninput="onMethodChange()"></div>
+    <div class="field"><label>起缴责任月</label><input id="cfStart" placeholder="如 2026-01"></div>
+    <div class="field"><label id="cfReasonLabel">变更原因（切换缴纳类型必填）</label><textarea id="cfReason" placeholder="如：该党员自 X 月起企业停发工资，改按基础党费缴纳"></textarea></div>
+    <div class="check-result ok" id="cfCalc">应缴金额将按规则自动测算（按工资基数：基数×对应比例；按基础党费：固定 0.2 元/月）。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('configModal')">取消</button><button class="btn btn-primary" onclick="saveConfig()">保存</button></div>
+</div></div>
+
+<!-- 批量修改党费缴纳配置模态 -->
+<div class="modal-mask" id="batchModal"><div class="modal">
+  <div class="mh"><h3>批量修改党费缴纳配置</h3><button class="x" onclick="closeMask('batchModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="batch-tip" id="batchTip">已选择 0 条</div>
+    <div class="field"><label>缴纳类型</label><select id="batchMethod" onchange="document.getElementById('batchBaseField').style.display=(this.value==='salary')?'':'none'"><option value="">不修改（保留原值）</option><option value="salary">按工资基数缴纳</option><option value="basic">按基础党费缴纳（0.2元/月）</option></select></div>
+    <div class="field" id="batchBaseField"><label>工资基数（税后，元）</label><input id="batchBase" type="number" value="0" min="0"></div>
+    <div class="field"><label>统一变更原因（批量切换缴纳类型必填）</label><textarea id="batchReason" placeholder="如：该企业本季度起停发工资，统一改按基础党费缴纳，次月生效"></textarea></div>
+    <div class="check-result ok">仅对勾选的当前月份配置生效；选择「不修改」则保留原值。基础党费无需填写工资基数。变更次月生效并写入操作日志。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('batchModal')">取消</button><button class="btn btn-primary" onclick="applyBatch()">确认修改</button></div>
+</div></div>
+
+<!-- 缴费登记 / 补缴 模态（需上传凭证） -->
+<div class="modal-mask" id="payModal"><div class="modal">
+  <div class="mh"><h3 id="payModalTitle">登记缴费</h3><button class="x" onclick="closeMask('payModal')" style="border:none;background:none;font-size:18px;cursor:pointer">✕</button></div>
+  <div class="mb">
+    <div class="field"><label>党员</label><input id="payName" disabled></div>
+    <div class="field-row">
+      <div class="field"><label>缴费方式</label><select id="payMode"><option value="现金">现金</option><option value="银行转账">银行转账</option><option value="微信">微信</option><option value="支付宝">支付宝</option><option value="线下登记">线下登记</option></select></div>
+      <div class="field"><label>缴费时间</label><input id="payTime" type="text" placeholder="如 2026-08-11 10:30"></div>
+    </div>
+    <div class="field"><label>凭证编号</label><input id="payVoucher" placeholder="如 V20260811-001（必填）"></div>
+    <div class="field"><label>上传凭证（回单 / 截图）</label><input id="payFile" type="file" accept="image/*,.pdf"></div>
+    <div class="field"><label>备注</label><textarea id="payNote" placeholder="选填，如：现场现金收缴"></textarea></div>
+    <div class="check-result ok" id="payCheck">登记缴费 / 补缴为线下操作，提交后状态变更为「已缴 / 补缴」并生成电子凭证（凭证编号必填）。</div>
+  </div>
+  <div class="mf"><button class="btn btn-secondary" onclick="closeMask('payModal')">取消</button><button class="btn btn-primary" onclick="submitPay()">确认提交</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 数据 ============ */
+// 中组部标准比例（可配置）
+var FEE_RATES = [
+  { tier:'3000 元以下（含）', rate:0.5, conf:true },
+  { tier:'3001 – 5000 元（含）', rate:1.0, conf:true },
+  { tier:'5001 – 10000 元（含）', rate:1.5, conf:true },
+  { tier:'10000 元以上', rate:2.0, conf:true }
+];
+
+// 党费缴纳配置（人员核算方法 · 台账生成的数据源）
+// method: salary=按工资基数缴纳(基数×对应比例) / basic=按基础党费缴纳(固定 0.2 元/月，企业当月不发工资场景)
+// status: enabled=启用 / disabled=停用
+// 系统参数（PRD §4.4.2 · 基础党费/生成日/补录跨度，可配置）
+var SYSTEM_PARAMS = {
+  base_fee_amount: 0.20,        // 基础党费（元/月）：企业当月不发工资场景，可配置
+  fee_generate_day: 1,          // 每月生成台账日
+  fee_backfill_max_month: 12    // 允许补录的最大月份跨度（月）
+};
+var BASIC_FEE = SYSTEM_PARAMS.base_fee_amount; // 基础党费：企业当月不发工资时按固定金额缴纳（元/月）
+function calcShould(cfg){
+  if(cfg.method==='basic') return BASIC_FEE;
+  var base = Number(cfg.salary_base)||0, rate=0;
+  if(base<=3000) rate=0.5; else if(base<=5000) rate=1.0; else if(base<=10000) rate=1.5; else rate=2.0;
+  return Math.round(base*rate)/100; // 元，保留2位
+}
+function rateOf(base){ if(base<=3000) return 0.5; if(base<=5000) return 1.0; if(base<=10000) return 1.5; return 2.0; }
+
+/* —— PRD 方案一 / 方案二 字段与状态工具 —— */
+// pay_type：BASE_SALARY=按工资基数缴纳 / BASE_FEE=按基础党费缴纳（PRD §4.1）
+function payTypeOf(method){ return method==='basic' ? 'BASE_FEE' : 'BASE_SALARY'; }
+function methodOfPayType(pt){ return pt==='BASE_FEE' ? 'basic' : 'salary'; }
+// 在职状态（PRD §9 方案二）：在岗/下岗/停薪留职/长期病假/离退休
+function employmentLabel(s){ var m={在岗:'在岗',下岗:'下岗',停薪留职:'停薪留职',长期病假:'长期病假',离退休:'离退休'}; return m[s]||s||'—'; }
+function empTag(s){
+  var map={在岗:'green',下岗:'orange',停薪留职:'blue',长期病假:'red',离退休:'gray'};
+  return '<span class="tag '+(map[s]||'gray')+'">'+employmentLabel(s)+'</span>';
+}
+// 台账状态（PRD §4.2.2）：正常 / 已补录 / 已封存
+function ledgerStateTag(s){
+  var map={正常:'green',已补录:'orange',已封存:'gray'};
+  return '<span class="tag '+(map[s]||'gray')+'">'+(s||'正常')+'</span>';
+}
+// 方案二开关：在职状态作为核算判定入口（默认关→采用方案一 method；开启后由 employment_status 决定核算方式，PRD §9.4）
+var USE_EMPLOYMENT_AS_CALC = false;
+// 操作日志（PRD §4.1.3 变更留痕）
+var OPER_LOG = [];
+function addOperLog(entry){ OPER_LOG.unshift(Object.assign({ time: todayStr(), operator:'王芳（组织委员）' }, entry)); if(OPER_LOG.length>200) OPER_LOG.pop(); }
+// 台账状态表（key = org|ym）
+var LEDGER = {};
+function ledgerKey(org,ym){ return org+'|'+ym; }
+function getLedger(org,ym){ var k=ledgerKey(org,ym); if(!LEDGER[k]) LEDGER[k]={ org:org, ym:ym, status:'正常', generated_at:'', backfilled:false, sealed:false }; return LEDGER[k]; }
+// 按在职状态核算：在岗→基数×比例；下岗/停薪留职/长期病假→基础党费 0.2；离退休沿用原 method（PRD §9.2）
+function calcShouldByEmployment(cfg){
+  var s = cfg.employment_status;
+  if(s==='在岗'){ return calcShould(cfg); }
+  if(s==='下岗'||s==='停薪留职'||s==='长期病假'){ return BASIC_FEE; }
+  return calcShould(cfg); // 离退休等沿用原 method
+}
+var FEE_CONFIG = [
+  { member_id:'P001', name:'张伟', org:'机关支部', method:'salary', salary_base:6000, start_month:'2020-01', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P002', name:'王芳', org:'机关支部', method:'salary', salary_base:4000, start_month:'2020-03', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P003', name:'李强', org:'机关支部', method:'salary', salary_base:3000, start_month:'2019-06', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P004', name:'陈静', org:'机关支部', method:'salary', salary_base:5000, start_month:'2021-02', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P005', name:'刘洋', org:'机关支部', method:'salary', salary_base:2400, start_month:'2022-09', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P006', name:'周涛', org:'机关支部', method:'salary', salary_base:3600, start_month:'2020-11', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P007', name:'吴婷', org:'机关支部', method:'salary', salary_base:2000, start_month:'2021-07', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P008', name:'孙丽', org:'机关支部', method:'salary', salary_base:1600, start_month:'2022-03', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P009', name:'郭红', org:'机关支部', method:'salary', salary_base:4400, start_month:'2019-12', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P010', name:'赵磊', org:'机关支部', method:'salary', salary_base:2800, start_month:'2020-05', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P011', name:'钱进', org:'机关支部', method:'salary', salary_base:3200, start_month:'2021-10', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P012', name:'徐杰', org:'机关支部', method:'salary', salary_base:3200, start_month:'2022-01', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P013', name:'郑凯', org:'机关支部', method:'basic', salary_base:0, start_month:'2026-02', created_at:'2026-02-01', status:'enabled' },
+  { member_id:'P014', name:'冯璐', org:'机关支部', method:'salary', salary_base:4500, start_month:'2023-04', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P101', name:'黄伟', org:'生产党支部', method:'salary', salary_base:5200, start_month:'2021-08', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P102', name:'林娜', org:'生产党支部', method:'salary', salary_base:3400, start_month:'2022-05', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P103', name:'何强', org:'生产党支部', method:'basic', salary_base:0, start_month:'2026-03', created_at:'2026-03-01', status:'enabled' },
+  { member_id:'P201', name:'许老', org:'离退休党支部', method:'salary', salary_base:1800, start_month:'2018-01', created_at:'2026-01-05', status:'enabled' },
+  { member_id:'P202', name:'邓婆', org:'离退休党支部', method:'basic', salary_base:0, start_month:'2025-12', created_at:'2025-12-01', status:'enabled' }
+];
+
+// 数据标准化：补充 PRD 方案一（pay_type / payable_amount / effective_month / change_reason）与 方案二（employment_status）新增字段
+FEE_CONFIG.forEach(function(c){
+  c.pay_type = payTypeOf(c.method);
+  c.payable_amount = calcShould(c);
+  if(!c.effective_month) c.effective_month = c.start_month;
+  if(c.change_reason==null) c.change_reason = '';
+  if(!c.employment_status) c.employment_status = c.org.indexOf('离退休')>=0 ? '离退休' : '在岗';
+});
+
+// —— 党费缴纳配置为通用主数据（不按月度存储；逐月台账均按此配置计算）——
+function pad2(n){ return (n<10?'0':'')+n; }
+function ymOf(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1); }
+function nextYm(ym){ var p=String(ym).split('-'); var y=+p[0], m=+p[1]; m++; if(m===13){m=1;y++;} return y+'-'+pad2(m); }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+
+var CURRENT_MONTH = ymOf(new Date()); // 系统当前月（用于台账生成的默认目标月；配置本身不按月）
+
+// 党员名册（权威成员来源：在册 + 新转正/新转入）。党费缴纳配置为通用主数据，不随月份冗余存储。
+var ROSTER = FEE_CONFIG.map(function(c){ return { member_id:c.member_id, name:c.name, org:c.org, join_type:'在册', start_month:c.start_month, employment_status:(c.employment_status||(c.org.indexOf('离退休')>=0?'离退休':'在岗')) }; });
+ROSTER.push({ member_id:'P015', name:'孙强', org:'机关支部', join_type:'转正', start_month:'2026-08', employment_status:'在岗' });
+ROSTER.push({ member_id:'P016', name:'马涛', org:'生产党支部', join_type:'转入', start_month:'2026-09', employment_status:'在岗' });
+
+// 同步名册：名册中存在、配置中尚不存在的成员，补入 FEE_CONFIG 并标记「待完善」（仅带 党员/党组织/起缴责任月）
+function syncRoster(){
+  var n=0;
+  ROSTER.forEach(function(m){
+    if(FEE_CONFIG.some(function(c){ return c.member_id===m.member_id; })) return;
+    FEE_CONFIG.push({ member_id:m.member_id, name:m.name, org:m.org, method:'', salary_base:'', start_month:m.start_month, created_at:todayStr(), status:'pending', needEdit:true, join_type:m.join_type, employment_status:(m.employment_status||'在岗'), pay_type:'', payable_amount:0, effective_month:m.start_month, change_reason:'', });
+    n++;
+  });
+  return n;
+}
+
+// 缴费台账明细（party_fee_detail）+ 扩展字段
+// pay_status: 未缴/待审核/已缴/补缴/减免/欠缴
+// audit_status: 无需审核/待审核/已通过/已驳回
+// method 对应配置核算方式；notify 通知状态；base_start 历史应缴起始日；reject_reason 驳回原因；consecutiveMiss 连续未缴月数
+var FEE_DETAILS = [
+  { flow_id:'F202608-001', member_id:'P001', name:'张伟', org:'机关支部', ym:'2026-08', method:'salary', salary_base:6000, rate:1.5, should:90.0, actual:90.0, pay_type:'线下登记', pay_time:'2026-08-03 09:12', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608001', operator:'王芳', notify:'已通知', base_start:'2020-01', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-002', member_id:'P002', name:'王芳', org:'机关支部', ym:'2026-08', method:'salary', salary_base:4000, rate:1.0, should:40.0, actual:40.0, pay_type:'微信', pay_time:'2026-08-02 14:30', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608002', operator:'王芳', notify:'已通知', base_start:'2020-03', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-003', member_id:'P003', name:'李强', org:'机关支部', ym:'2026-08', method:'salary', salary_base:3000, rate:0.5, should:15.0, actual:15.0, pay_type:'对公代扣', pay_time:'2026-08-04 08:00', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608003', operator:'系统代扣', notify:'已通知', base_start:'2019-06', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-004', member_id:'P004', name:'陈静', org:'机关支部', ym:'2026-08', method:'salary', salary_base:5000, rate:1.0, should:50.0, actual:50.0, pay_type:'微信', pay_time:'2026-08-05 10:20', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608004', operator:'王芳', notify:'已通知', base_start:'2021-02', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-005', member_id:'P005', name:'刘洋', org:'机关支部', ym:'2026-08', method:'salary', salary_base:2400, rate:0.5, should:12.0, actual:12.0, pay_type:'线下登记', pay_time:'2026-08-06 15:40', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608005', operator:'王芳', notify:'已通知', base_start:'2022-09', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-006', member_id:'P006', name:'周涛', org:'机关支部', ym:'2026-08', method:'salary', salary_base:3600, rate:1.0, should:36.0, actual:0, pay_type:'', pay_time:'', pay_status:'欠缴', audit_status:'无需审核', voucher_no:'', operator:'', notify:'已通知', base_start:'2020-11', consecutiveMiss:6, reject_reason:'', history:['2026-07 欠缴','2026-06 欠缴','2026-05 欠缴','2026-04 欠缴','2026-03 欠缴','2026-02 欠缴'] },
+  { flow_id:'F202608-007', member_id:'P007', name:'吴婷', org:'机关支部', ym:'2026-08', method:'salary', salary_base:2000, rate:0.5, should:10.0, actual:0, pay_type:'', pay_time:'', pay_status:'欠缴', audit_status:'无需审核', voucher_no:'', operator:'', notify:'已通知', base_start:'2021-07', consecutiveMiss:2, reject_reason:'', history:['2026-07 欠缴','2026-06 已缴'] },
+  { flow_id:'F202608-008', member_id:'P008', name:'孙丽', org:'机关支部', ym:'2026-08', method:'salary', salary_base:1600, rate:0.5, should:8.0, actual:8.0, pay_type:'微信', pay_time:'2026-08-03 11:05', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608008', operator:'王芳', notify:'已通知', base_start:'2022-03', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-009', member_id:'P009', name:'郭红', org:'机关支部', ym:'2026-08', method:'salary', salary_base:4400, rate:1.0, should:44.0, actual:44.0, pay_type:'支付宝', pay_time:'2026-08-04 16:18', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608009', operator:'王芳', notify:'已通知', base_start:'2019-12', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-010', member_id:'P010', name:'赵磊', org:'机关支部', ym:'2026-08', method:'salary', salary_base:2800, rate:0.5, should:14.0, actual:0, pay_type:'减免', pay_time:'2026-01-15 09:00', pay_status:'减免', audit_status:'已通过', voucher_no:'V202601010', operator:'党工委', notify:'已通知', base_start:'2020-05', consecutiveMiss:0, reject_reason:'', history:['2026-07 减免','2026-06 减免'] },
+  { flow_id:'F202608-011', member_id:'P011', name:'钱进', org:'机关支部', ym:'2026-08', method:'salary', salary_base:3200, rate:1.0, should:32.0, actual:32.0, pay_type:'微信', pay_time:'2026-08-02 19:45', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608011', operator:'王芳', notify:'已通知', base_start:'2021-10', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-012', member_id:'P012', name:'徐杰', org:'机关支部', ym:'2026-08', method:'salary', salary_base:3200, rate:1.0, should:32.0, actual:32.0, pay_type:'线下登记', pay_time:'2026-08-09 10:00', pay_status:'补缴', audit_status:'无需审核', voucher_no:'V202608012', operator:'王芳', notify:'已通知', base_start:'2022-01', consecutiveMiss:0, reject_reason:'', history:['2026-07 欠缴→补缴','2026-06 已缴'] },
+  { flow_id:'F202608-013', member_id:'P013', name:'郑凯', org:'机关支部', ym:'2026-08', method:'basic', salary_base:0, rate:0, should:0.2, actual:0, pay_type:'', pay_time:'', pay_status:'未缴', audit_status:'无需审核', voucher_no:'', operator:'', notify:'已通知', base_start:'2026-02', consecutiveMiss:0, reject_reason:'', history:['2026-07 基础党费未缴','2026-06 基础党费未缴'] },
+  { flow_id:'F202608-014', member_id:'P014', name:'冯璐', org:'机关支部', ym:'2026-08', method:'salary', salary_base:4500, rate:1.0, should:45.0, actual:0, pay_type:'微信', pay_time:'2026-08-10 13:20', pay_status:'待审核', audit_status:'待审核', voucher_no:'V202608014', operator:'', notify:'已通知', base_start:'2023-04', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-101', member_id:'P101', name:'黄伟', org:'生产党支部', ym:'2026-08', method:'salary', salary_base:5200, rate:1.5, should:78.0, actual:78.0, pay_type:'对公代扣', pay_time:'2026-08-05 09:00', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608101', operator:'系统代扣', notify:'已通知', base_start:'2021-08', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-102', member_id:'P102', name:'林娜', org:'生产党支部', ym:'2026-08', method:'salary', salary_base:3400, rate:1.0, should:34.0, actual:0, pay_type:'', pay_time:'', pay_status:'欠缴', audit_status:'无需审核', voucher_no:'', operator:'', notify:'已通知', base_start:'2022-05', consecutiveMiss:1, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-103', member_id:'P103', name:'何强', org:'生产党支部', ym:'2026-08', method:'basic', salary_base:0, rate:0, should:0.2, actual:0.2, pay_type:'线下登记', pay_time:'2026-08-06 10:00', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608103', operator:'车间支委', notify:'已通知', base_start:'2026-03', consecutiveMiss:0, reject_reason:'', history:['2026-07 基础党费已缴'] },
+  { flow_id:'F202608-201', member_id:'P201', name:'许老', org:'离退休党支部', ym:'2026-08', method:'salary', salary_base:1800, rate:0.5, should:9.0, actual:9.0, pay_type:'线下登记', pay_time:'2026-08-07 09:30', pay_status:'已缴', audit_status:'无需审核', voucher_no:'V202608201', operator:'支部联络员', notify:'已通知', base_start:'2018-01', consecutiveMiss:0, reject_reason:'', history:['2026-07 已缴','2026-06 已缴'] },
+  { flow_id:'F202608-202', member_id:'P202', name:'邓婆', org:'离退休党支部', ym:'2026-08', method:'basic', salary_base:0, rate:0, should:0.2, actual:0, pay_type:'', pay_time:'', pay_status:'未缴', audit_status:'无需审核', voucher_no:'', operator:'', notify:'未通知', base_start:'2025-12', consecutiveMiss:0, reject_reason:'', history:['2026-07 基础党费未缴'] }
+];
+
+// 明细台账标准化：补充 缴纳类型快照(规范为 BASE_SALARY/BASE_FEE) / 在职状态快照 / 补录标记（PRD §4.2.4 / §4.3 / §9.3）
+// 注：历史/导入数据中 pay_type 曾被误用作「缴费方式(渠道)」，此处统一迁移到 pay_channel，pay_type 仅保留缴纳类型快照
+var PAY_CHANNELS = ['微信','对公代扣','线下登记','支付宝','减免','现金','银行卡'];
+FEE_DETAILS.forEach(function(d){
+  if(PAY_CHANNELS.indexOf(d.pay_type) >= 0){ d.pay_channel = d.pay_type; d.pay_type = payTypeOf(d.method); }
+  else if(!d.pay_type){ d.pay_type = payTypeOf(d.method); }
+  if(d.pay_channel==null) d.pay_channel = '';
+  if(!d.employment_status){ var cc = FEE_CONFIG.find(function(c){ return c.member_id===d.member_id; }); d.employment_status = (cc && cc.employment_status) ? cc.employment_status : '在岗'; }
+  if(d.is_backfill==null) d.is_backfill = false;
+});
+
+// 党费使用支出台账
+var EXPENSES = [
+  { id:'E2026-021', item:'购买党员学习教育书籍', amount:800, cat:'学习资料', level:'支部审批', invoice:'INV-2026-021', status:'已支付', applyOrg:'机关支部', date:'2026-07-20' },
+  { flow:1, id:'E2026-022', item:'七一主题党日活动物料', amount:3200, cat:'教育活动', level:'党委审批', invoice:'INV-2026-022', status:'已审批', applyOrg:'机关支部', date:'2026-07-28' },
+  { id:'E2026-023', item:'慰问困难党员慰问金', amount:1500, cat:'关爱帮扶', level:'党总支审批', invoice:'INV-2026-023', status:'待审批', applyOrg:'机关支部', date:'2026-08-08' }
+];
+
+// 收支公示表
+var PUBLICITY = [
+  { id:'PB2026Q1', period:'2026 年第一季度', income:1180, expense:540, status:'已发布' },
+  { id:'PB2026Q2', period:'2026 年第二季度', income:1240, expense:610, status:'待发布' }
+];
+
+// 逐级上缴单
+var PAYUP = [
+  { id:'PU2026-06', period:'2026-06', amount:1180, toOrg:'街道党工委', status:'已对账' },
+  { id:'PU2026-07', period:'2026-07', amount:1240, toOrg:'街道党工委', status:'已上缴' }
+];
+
+// 结余台账（结余 = 收缴 − 上缴 − 使用 − 公示扣减）
+var BALANCE = { org:'机关支部', year:2026, totalIncome:4860, totalPayup:2420, totalExpense:1150, totalPublicity:0, note:'年度结转自动生成，结余变动全程留痕' };
+
+/* ============ 工具 ============ */
+function statusTag(s){
+  if(s==='已缴'||s==='减免'||s==='已支付'||s==='已发布'||s==='已对账'||s==='已生效') return '<span class="tag green">'+s+'</span>';
+  if(s==='欠缴'||s==='待审批') return '<span class="tag red">'+s+'</span>';
+  if(s==='补缴') return '<span class="tag orange">'+s+'</span>';
+  return '<span class="tag blue">'+s+'</span>';
+}
+function showToast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window.__tt); window.__tt=setTimeout(function(){ t.classList.remove('show'); },2200); }
+function openMask(id){ document.getElementById(id).classList.add('open'); }
+function closeMask(id){ document.getElementById(id).classList.remove('open'); }
+/* 右侧抽屉工具（12 原仅有居中模态 openMask/closeDrawer；新增 .drawer 右侧抽屉，兼容 .drawer-mask 包裹） */
+function openDrawer(id){ var d=document.getElementById(id); if(!d) return; var m=d.closest('.drawer-mask'); if(m) m.classList.add('open'); else d.classList.add('open'); }
+function closeDrawer(id){ var d=document.getElementById(id); if(!d) return; var m=d.closest('.drawer-mask'); if(m) m.classList.remove('open'); else d.classList.remove('open'); }
+function openOperLogDrawer(){ openDrawer('drawer-operlog'); renderOperLog(); }
+function closeOperLogDrawer(){ closeDrawer('drawer-operlog'); }
+function openCalcDrawer(){ openDrawer('drawer-calc'); }
+function closeCalcDrawer(){ closeDrawer('drawer-calc'); }
+function openUrgeDrawer(){ openDrawer('drawer-urge'); renderUrge(); }
+function closeUrgeDrawer(){ closeDrawer('drawer-urge'); }
+
+/* ============ 导航 ============ */
+function toggleNavGroup(el){ el.closest('.nav-group').classList.toggle('collapsed'); }
+function navLeaf(a){ /* 选中态由目标 href 决定，跳转交给浏览器；演示下保持高亮 */ }
+
+/* ============ 子标签路由 ============ */
+var TAB_CRUMB = { config:'党费缴纳配置', calc:'党费核算与收缴', use:'党费使用、公示与对账', detail:'党费明细清单' };
+function switchView(key){
+  ['config','calc','use','detail'].forEach(function(k){
+    var p = document.getElementById('panel-'+k);
+    if(p) p.classList.toggle('hidden', k!==key);
+  });
+  document.getElementById('crumbActive').textContent = TAB_CRUMB[key] || '';
+  // 明细页归属「党费核算与收缴」导航高亮
+  var navKey = (key==='detail') ? 'calc' : key;
+  document.querySelectorAll('.nav-group#grp-fee .nav-item').forEach(function(it){
+    it.classList.toggle('active', it.getAttribute('href').indexOf('#'+navKey)>-1);
+  });
+  if(location.hash !== '#'+key) location.hash = '#'+key;
+  // 明细页直接访问/刷新时自动渲染，避免空白
+  if(key==='detail'){
+    if(!curDetail.org && FEE_DETAILS.length){
+      curDetail = { org: FEE_DETAILS[0].org, ym: FEE_DETAILS[0].ym };
+    }
+    if(curDetail.org){
+      document.getElementById('detailTitle').textContent = curDetail.org+' · '+curDetail.ym+' 党费明细清单'+(curDetail.emp?(' · '+employmentLabel(curDetail.emp)):'');
+      ['dStatus','dAudit','dOverdue','dPayType','dEmp'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+      renderDetail();
+    }
+  }
+}
+
+/* ============ KPI ============ */
+function renderKpis(){
+  var cur = FEE_DETAILS.filter(function(d){ return d.ym==='2026-08'; });
+  var should = cur.reduce(function(a,d){ return a + d.should; },0);
+  var paid = cur.reduce(function(a,d){ return a + ((d.pay_status==='已缴'||d.pay_status==='补缴'||d.pay_status==='待审核')?d.should:0); },0);
+  var rate = should>0 ? Math.round(paid/should*100) : 0;
+  var owed = cur.filter(function(d){ return d.pay_status==='欠缴'||d.pay_status==='未缴'; }).length;
+  var red = cur.filter(function(d){ return d.consecutiveMiss>=6; }).length;
+  document.getElementById('kpis').innerHTML =
+    kpiCard('本月应收党费(元)', should.toFixed(2), 'blue', '按月核算') +
+    kpiCard('本月已缴(元)', paid.toFixed(2), 'green', '收缴率 '+rate+'%') +
+    kpiCard('欠缴党员', owed, owed>0?'red':'green', owed>0?'需催缴':'全部缴清') +
+    kpiCard('红色预警(连续6月)', red, red>0?'red':'green', red>0?'同步书记处理':'无高危');
+}
+function kpiCard(lbl,num,color,trend){
+  return '<div class="kpi"><div class="lbl">'+lbl+'</div><div class="num '+color+'">'+num+'</div><div class="trend">'+trend+'</div></div>';
+}
+
+/* ============ 比例配置 ============ */
+function renderRates(){
+  var tb = document.querySelector('#rateTb tbody');
+  tb.innerHTML = FEE_RATES.map(function(r){
+    return '<tr><td>'+r.tier+'</td><td class="mono">'+r.rate+'%</td><td>'+(r.conf?'<span class="tag green">可配置</span>':'<span class="tag gray">固定</span>')+'</td></tr>';
+  }).join('');
+}
+
+/* ============ 逾期催缴 ============ */
+function renderUrge(){
+  var org = curDetail ? curDetail.org : (FEE_DETAILS[0] ? FEE_DETAILS[0].org : '');
+  var ym = curDetail ? curDetail.ym : '2026-08';
+  var note = document.getElementById('urgeDrawerNote');
+  if(note) note.textContent = org + ' · ' + ym + ' · 每月1–15日缴费期 · 连续6个月未缴触发红色预警·同步书记';
+  var owed = FEE_DETAILS.filter(function(d){ return d.org===org && d.ym===ym && (d.pay_status==='欠缴'||d.pay_status==='未缴'); });
+  var html = '';
+  if(owed.length===0){ html = '<div class="check-result ok">本月 '+org+' 无欠缴党员。</div>'; }
+  else {
+    owed.forEach(function(d){
+      var red = d.consecutiveMiss>=6;
+      html += '<div class="audit-item" style="'+(red?'border-color:var(--brand-red)':'border-color:var(--state-orange)')+'">'+
+        '<div class="ai-main"><div class="nm">'+d.name+' <span class="muted">· 应交 '+d.should.toFixed(2)+' 元</span></div>'+
+        '<div class="ds">连续未缴 '+d.consecutiveMiss+' 个月'+(red?' · 已触发红色预警，同步支部书记启动组织处理':' · 自动催缴中')+'</div></div>'+
+        '<div class="ai-act">'+(red?'<span class="tag red">红色预警</span>':'<span class="tag orange">橙色</span>')+
+        '<button class="btn btn-sm btn-danger" onclick="urgeMember(\''+d.flow_id+'\')">催缴</button></div></div>';
+    });
+  }
+  html += '<div style="margin-top:var(--space-4)"><button class="btn btn-primary btn-sm" onclick="urgeAll()">一键批量催缴（短信+站内）</button></div>';
+  var box = document.getElementById('urgeDrawerContent');
+  if(box) box.innerHTML = html;
+}
+function urgeMember(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  showToast('已向 '+d.name+'（'+d.org+' · '+d.ym+'）发送催缴提醒（演示）');
+}
+function urgeAll(){
+  var org = curDetail ? curDetail.org : (FEE_DETAILS[0] ? FEE_DETAILS[0].org : '');
+  var ym = curDetail ? curDetail.ym : '2026-08';
+  var n = FEE_DETAILS.filter(function(d){ return d.org===org && d.ym===ym && (d.pay_status==='欠缴'||d.pay_status==='未缴'); }).length;
+  showToast('已向 '+org+' · '+ym+' 批量催缴 '+n+' 名欠缴党员（演示）');
+}
+
+/* ============ 党费缴纳配置（人员核算方法 · 按月度） ============ */
+function renderConfig(){
+  var org = document.getElementById('cfOrg').value;
+  var type = document.getElementById('cfType').value;
+  var list = FEE_CONFIG;
+  var rows = list.filter(function(c){
+    if(org!=='' && c.org!==org) return false;
+    if(type==='pending') return (c.status==='pending' || c.method==='');
+    if(type!=='' && c.method!==type) return false;
+    return true;
+  });
+  var tb = document.getElementById('cfgBody');
+  if(rows.length===0){ tb.innerHTML = '<tr><td colspan="13"><div class="empty">暂无配置，点击「新增配置」或「同步名册」</div></td></tr>'; updateBatchTip(); return; }
+  tb.innerHTML = rows.map(function(c){
+    var pending = (c.status==='pending' || c.method==='');
+    var should = pending ? '—' : calcShould(c).toFixed(2);
+    var typeTag = pending ? '<span class="tag orange">待完善</span>' : (c.method==='salary' ? '<span class="tag blue">按工资基数</span>' : '<span class="tag gold">按基础党费</span>');
+    var baseTxt = pending ? '—' : (c.method==='salary' ? c.salary_base : '—');
+    var stTag = c.status==='enabled' ? '<span class="tag green">启用</span>' : (c.status==='pending' ? '<span class="tag orange">待完善</span>' : '<span class="tag gray">停用</span>');
+    var checked = cfgSelection.indexOf(c.member_id)>=0 ? 'checked' : '';
+    var joinNote = (c.join_type && c.join_type!=='在册') ? ' <span class="muted">·'+c.join_type+'</span>' : '';
+    return '<tr>'+
+      '<td style="text-align:center"><input type="checkbox" data-mid="'+c.member_id+'" '+checked+' onchange="toggleCfgCheck(this)"></td>'+
+      '<td><div class="name-cell"><span class="av">'+c.name.charAt(0)+'</span>'+c.name+joinNote+'</div></td>'+
+      '<td>'+c.org+'</td>'+
+      '<td>'+empTag(c.employment_status)+'</td>'+
+      '<td>'+typeTag+'</td>'+
+      '<td class="mono">'+baseTxt+'</td>'+
+      '<td class="mono">'+should+'</td>'+
+      '<td class="mono">'+c.start_month+'</td>'+
+      '<td class="mono">'+c.effective_month+'</td>'+
+      '<td class="mono">'+c.created_at+'</td>'+
+      '<td class="muted" title="'+c.change_reason+'">'+((c.change_reason&&c.change_reason!=='')?c.change_reason:'—')+'</td>'+
+      '<td>'+stTag+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-sm btn-ghost" onclick="openConfigModal(\''+c.member_id+'\')">编辑</button><button class="btn btn-sm btn-danger" onclick="deleteConfig(\''+c.member_id+'\')">删除</button></td>'+
+    '</tr>';
+  }).join('');
+  updateBatchTip();
+}
+function renderOperLog(){
+  var box = document.getElementById('operLogBody');
+  if(!box) return;
+  if(OPER_LOG.length===0){ box.innerHTML = '<div class="sub-note">操作日志：暂无变更记录（编辑/批量修改配置时将自动留痕，PRD §4.1.3）。</div>'; return; }
+  var actionColor = function(a){ return a.indexOf('批量')>=0 ? 'orange' : (a.indexOf('修改')>=0 ? 'blue' : (a.indexOf('新增')>=0 ? 'green' : (a.indexOf('导出')>=0 ? 'gray' : 'gold'))); };
+  box.innerHTML = '<div style="font-weight:600;font-size:13px;margin-bottom:6px">操作日志（最近 '+OPER_LOG.length+' 条 · PRD §4.1.3 变更留痕）</div>'+
+    OPER_LOG.slice(0,10).map(function(e){
+      return '<div class="oper-log-item">'+
+        '<div class="ol-h"><span class="ol-time">'+e.time+'</span><span class="ol-operator">'+e.operator+'</span><span class="tag '+actionColor(e.action)+'">'+e.action+'</span></div>'+
+        '<div class="ol-body">'+
+          '<div><b>党员：</b>'+(e.member||'—')+' &nbsp;|&nbsp; <b>组织：</b>'+(e.org||'—')+'</div>'+
+          '<div class="ol-detail">'+(e.detail||'')+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+}
+
+var editingCfgId = null;
+var editingOrigMethod = null; // 编辑前原始 method（用于判定「切换缴纳类型」是否触发必填变更原因）
+var cfgSelection = []; // 当前月份勾选的 member_id 集合
+function openConfigModal(id){
+  editingCfgId = id || null;
+  document.getElementById('cfgModalTitle').textContent = id ? '编辑党费缴纳配置' : '新增党费缴纳配置';
+  var list = FEE_CONFIG;
+  var c = id ? list.find(function(x){ return x.member_id===id; }) : null;
+  editingOrigMethod = c ? c.method : null;
+  document.getElementById('cfName').value = c? c.name : '';
+  document.getElementById('cfOrgInput').value = c? c.org : '机关支部';
+  document.getElementById('cfMethod').value = c? (c.method||'salary') : 'salary';
+  document.getElementById('cfBase').value = (c && c.method==='salary') ? c.salary_base : 0;
+  document.getElementById('cfStart').value = c? c.start_month : '';
+  document.getElementById('cfEffMonth').value = c? (c.effective_month||nextYm(CURRENT_MONTH)) : nextYm(CURRENT_MONTH);
+  document.getElementById('cfReason').value = c? (c.change_reason||'') : '';
+  // 在职状态：只读同步党员档案（方案二）；按姓名匹配名册/配置
+  var emp = c ? c.employment_status : '在岗';
+  if(!c){ var r = ROSTER.find(function(x){ return x.name===name; }); if(r) emp = r.employment_status; }
+  document.getElementById('cfEmp').value = emp;
+  onMethodChange();
+  openMask('configModal');
+}
+function onCfgNameInput(){
+  // 输入姓名时同步只读「在职状态」（方案二）
+  var name = document.getElementById('cfName').value.trim();
+  var r = ROSTER.find(function(x){ return x.name===name; });
+  var c = FEE_CONFIG.find(function(x){ return x.name===name; });
+  document.getElementById('cfEmp').value = (r&&r.employment_status) ? r.employment_status : (c&&c.employment_status ? c.employment_status : '在岗');
+}
+function onMethodChange(){
+  var method = document.getElementById('cfMethod').value;
+  document.getElementById('cfBaseField').style.display = method==='salary' ? '' : 'none';
+  var base = Number(document.getElementById('cfBase').value)||0;
+  var should = method==='basic' ? BASIC_FEE : Math.round(base*rateOf(base))/100;
+  document.getElementById('cfCalc').textContent = '测算应缴金额：'+should.toFixed(2)+' 元/月（'+(method==='basic'?'基础党费固定 '+BASIC_FEE+' 元':'工资基数 '+base+' × '+rateOf(base)+'%')+'）';
+  // 切换缴纳类型 → 变更原因必填（PRD §4.1.3）
+  var changed = (editingOrigMethod!=null && editingOrigMethod!==method);
+  var label = document.getElementById('cfReasonLabel');
+  var ta = document.getElementById('cfReason');
+  if(changed){ label.innerHTML = '变更原因<span style="color:var(--brand-red)"> *（切换缴纳类型必填）</span>'; ta.style.borderColor = 'var(--brand-red)'; }
+  else { label.textContent = '变更原因（切换缴纳类型必填）'; ta.style.borderColor = ''; }
+}
+function saveConfig(){
+  var name = document.getElementById('cfName').value.trim();
+  var org = document.getElementById('cfOrgInput').value;
+  var method = document.getElementById('cfMethod').value;
+  var base = Number(document.getElementById('cfBase').value)||0;
+  var start = document.getElementById('cfStart').value.trim();
+  var eff = document.getElementById('cfEffMonth').value.trim();
+  var reason = document.getElementById('cfReason').value.trim();
+  var emp = document.getElementById('cfEmp').value;
+  if(!name){ showToast('请填写党员姓名'); return; }
+  if(method==='salary' && base<=0){ showToast('按工资基数缴纳需填写工资基数'); return; }
+  if(!start){ showToast('请填写起缴责任月'); return; }
+  // 切换缴纳类型 → 变更原因必填（PRD §4.1.3）
+  if(editingOrigMethod!=null && editingOrigMethod!==method && !reason){ showToast('切换缴纳类型须填写「变更原因」'); return; }
+  if(!eff){ eff = nextYm(CURRENT_MONTH); }
+  var done = (method==='basic') || (method==='salary' && base>0);
+  if(editingCfgId){
+    var c = FEE_CONFIG.find(function(x){ return x.member_id===editingCfgId; });
+    var methodChanged = (c.method!==method);
+    c.name=name; c.org=org; c.method=method; c.salary_base=base; c.start_month=start;
+    c.effective_month = methodChanged ? eff : (c.effective_month||eff); // 切换类型次月生效
+    c.change_reason = reason || c.change_reason || '';
+    c.pay_type = payTypeOf(method);
+    c.payable_amount = calcShould(c);
+    c.employment_status = emp;
+    c.status = done ? 'enabled' : 'pending'; c.needEdit = !done; c.update_at = todayStr();
+    addOperLog({ action:'修改党费缴纳配置', member:name, org:org, detail:'缴纳类型→'+payTypeOf(method)+' · 应缴'+calcShould(c).toFixed(2)+'元 · 生效月份'+c.effective_month+(reason?(' · 变更原因：'+reason):'') });
+    showToast('配置已更新：'+name+(methodChanged?('（次月 '+eff+' 生效）'):''));
+  } else {
+    var mid = 'P'+(900+ FEE_CONFIG.length);
+    FEE_CONFIG.push({
+      member_id:mid, name:name, org:org, method:method, salary_base:base, start_month:start,
+      created_at:todayStr(), status: done?'enabled':'pending', needEdit:!done,
+      pay_type: payTypeOf(method), payable_amount: done?calcShould({method:method,salary_base:base}):0,
+      effective_month: eff, change_reason: reason, employment_status: emp
+    });
+    addOperLog({ action:'新增党费缴纳配置', member:name, org:org, detail:'缴纳类型→'+payTypeOf(method)+' · 生效月份 '+eff+(reason?(' · 变更原因：'+reason):'') });
+    showToast('已新增配置：'+name);
+  }
+  closeMask('configModal');
+  renderConfig(); renderOperLog();
+}
+function deleteConfig(id){
+  var list = FEE_CONFIG;
+  var c = list.find(function(x){ return x.member_id===id; });
+  if(!c){ return; }
+  if(c.status==='pending'){ var idx=list.indexOf(c); if(idx>=0) list.splice(idx,1); showToast('待完善记录「'+c.name+'」已移除'); }
+  else { c.status='disabled'; showToast('配置「'+c.name+'」已停用（历史台账保留）'); }
+  renderConfig();
+}
+
+/* ============ 月度 / 自动生成 / 批量 / 导入 ============ */
+function syncRosterBtn(){
+  var n = syncRoster();
+  cfgSelection=[];
+  renderConfig();
+  if(n>0) showToast('已同步名册：新增 '+n+' 条待完善（新转正/转入党员），请补全配置');
+  else showToast('名册已是最新，无新增成员');
+}
+function toggleCfgCheck(el){
+  var mid = el.getAttribute('data-mid');
+  if(el.checked){ if(cfgSelection.indexOf(mid)<0) cfgSelection.push(mid); }
+  else { cfgSelection = cfgSelection.filter(function(x){ return x!==mid; }); }
+  updateBatchTip();
+}
+function toggleAllCfg(el){
+  var boxes = document.querySelectorAll('#cfgBody input[data-mid]');
+  Array.prototype.forEach.call(boxes, function(b){ b.checked = el.checked; });
+  cfgSelection = el.checked ? Array.prototype.map.call(boxes, function(b){ return b.getAttribute('data-mid'); }) : [];
+  updateBatchTip();
+}
+function updateBatchTip(){
+  var tip = document.getElementById('batchTip'); if(tip) tip.textContent = '已选择 '+cfgSelection.length+' 条';
+  var btn = document.getElementById('btnBatch'); if(btn){ btn.disabled = cfgSelection.length===0; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>批量修改（'+cfgSelection.length+'）'; }
+}
+function openBatch(){
+  if(cfgSelection.length===0){ showToast('请先勾选需要批量修改的配置'); return; }
+  document.getElementById('batchMethod').value='';
+  document.getElementById('batchBase').value=0;
+  document.getElementById('batchReason').value='';
+  document.getElementById('batchBaseField').style.display='';
+  document.getElementById('batchTip').textContent='已选择 '+cfgSelection.length+' 条';
+  openMask('batchModal');
+}
+function applyBatch(){
+  var method = document.getElementById('batchMethod').value;
+  var base = Number(document.getElementById('batchBase').value)||0;
+  if(method==='salary' && base<=0){ showToast('按工资基数缴纳需填写工资基数'); return; }
+  var reason = document.getElementById('batchReason').value.trim();
+  if(method && !reason){ showToast('批量切换缴纳类型须填写「统一变更原因」'); return; } // PRD §4.1.4
+  var eff = nextYm(CURRENT_MONTH); // 次月生效
+  var n=0;
+  FEE_CONFIG.forEach(function(c){
+    if(cfgSelection.indexOf(c.member_id)<0) return;
+    var changed = method && c.method!==method;
+    if(method) c.method=method;
+    if(method==='salary') c.salary_base=base;
+    if(method==='basic') c.salary_base=0;
+    if(changed){ c.effective_month = eff; c.change_reason = reason; }
+    c.pay_type = payTypeOf(c.method);
+    c.payable_amount = calcShould(c);
+    var done = (c.method==='basic') || (c.method==='salary' && Number(c.salary_base)>0);
+    c.status = done ? 'enabled' : 'pending'; c.needEdit = !done; c.update_at = todayStr();
+    n++;
+  });
+  if(n>0) addOperLog({ action:'批量修改党费缴纳配置', member:(n+' 名党员'), org:'—', detail:n+' 名 · 统一缴纳类型→'+(method?payTypeOf(method):'保留原值')+' · 生效月份 '+eff+(reason?(' · 变更原因：'+reason):'') });
+  closeMask('batchModal');
+  cfgSelection=[];
+  renderConfig(); renderOperLog();
+  showToast('已批量修改 '+n+' 条配置'+(method?('（次月 '+eff+' 生效）'):''));
+}
+function downloadCfgTemplate(){
+  var csv = '党员姓名,所属党组织,缴纳类型,工资基数,起缴责任月\n张三,机关支部,salary,5000,2026-01\n李四,生产党支部,basic,,2026-03';
+  var blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '党费缴纳配置导入模板.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('已下载导入模板（CSV，Excel 可直接打开）');
+}
+function importCfgFile(input){
+  var f = input.files && input.files[0];
+  if(!f){ return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var rows = parseCsvText(String(e.target.result||''));
+      var n = applyConfigImport(rows);
+      renderConfig(); renderOperLog();
+      showToast('导入成功：更新/新增 '+n+' 条配置');
+    }catch(err){ showToast('导入失败：'+err.message); }
+  };
+  reader.readAsText(f, 'utf-8');
+  input.value='';
+}
+function parseCsvText(text){
+  // 支持 CSV（逗号）/ TSV；首行为表头；兼容中文/英文表头
+  var lines = String(text).replace(/\r/g,'').split('\n').filter(function(l){ return l.trim()!==''; });
+  if(lines.length<2) return [];
+  var delim = lines[0].indexOf('\t')>=0 ? '\t' : ',';
+  var head = lines[0].split(delim).map(function(h){ return h.trim(); });
+  var idx = {};
+  head.forEach(function(h,i){ idx[h]=i; });
+  function col(row, names){ for(var i=0;i<names.length;i++){ if(idx[names[i]]!=null) return (row[idx[names[i]]]||'').trim(); } return ''; }
+  var out=[];
+  for(var i=1;i<lines.length;i++){
+    var cells = lines[i].split(delim);
+    var name = col(cells,['党员姓名','姓名','name']);
+    if(!name) continue;
+    var org = col(cells,['所属党组织','党组织','org']) || '机关支部';
+    var mRaw = (col(cells,['缴纳类型','类型','method'])||'').trim();
+    var method = (mRaw==='basic' || mRaw.indexOf('基础')>=0) ? 'basic' : 'salary';
+    var baseRaw = (col(cells,['工资基数','基数','base'])||'').trim();
+    var base = baseRaw==='' ? 0 : Number(baseRaw);
+    if(isNaN(base)) base=0;
+    var start = col(cells,['起缴责任月','起缴月','start']) || '';
+    out.push({ name:name, org:org, method:method, salary_base:base, start_month:start });
+  }
+  return out;
+}
+function applyConfigImport(rows){
+  if(!rows || !rows.length) return 0;
+  var list = FEE_CONFIG;
+  var n=0;
+  rows.forEach(function(r){
+    var exist = list.find(function(c){ return c.name===r.name && c.org===r.org; });
+    if(exist){
+      exist.method=r.method; exist.salary_base=r.salary_base; if(r.start_month) exist.start_month=r.start_month;
+      exist.pay_type=payTypeOf(r.method); exist.payable_amount=calcShould(exist);
+      if(!exist.effective_month) exist.effective_month=exist.start_month;
+      if(!exist.employment_status) exist.employment_status='在岗';
+      var done=(exist.method==='basic')||(exist.method==='salary'&&Number(exist.salary_base)>0);
+      exist.status=done?'enabled':'pending'; exist.needEdit=!done; exist.update_at=todayStr(); n++;
+    } else {
+      var mid='P'+(900+FEE_CONFIG.length);
+      list.push({ member_id:mid, name:r.name, org:r.org, method:r.method, salary_base:r.salary_base, start_month:r.start_month, created_at:todayStr(), status:(r.method==='basic'||(r.method==='salary'&&r.salary_base>0))?'enabled':'pending', needEdit:false, pay_type:payTypeOf(r.method), payable_amount:calcShould({method:r.method,salary_base:r.salary_base}), effective_month:r.start_month, change_reason:'', employment_status:'在岗' });
+      n++;
+    }
+  });
+  if(n>0) addOperLog({ action:'导入配置', member:(n+' 条'), org:'—', detail:'Excel/CSV 批量导入更新（PRD §4.1.3 留痕）' });
+  return n;
+}
+
+/* ============ 系统参数 / 方案二 开关 ============ */
+function saveSystemParams(){
+  var bf = parseFloat(document.getElementById('spBaseFee').value);
+  var gd = parseInt(document.getElementById('spGenDay').value,10);
+  var bm = parseInt(document.getElementById('spBackfill').value,10);
+  if(isNaN(bf)||bf<0){ showToast('基础党费金额无效'); return; }
+  if(isNaN(gd)||gd<1||gd>28){ showToast('生成日须在 1–28'); return; }
+  if(isNaN(bm)||bm<1||bm>36){ showToast('补录跨度须在 1–36 月'); return; }
+  SYSTEM_PARAMS.base_fee_amount = Math.round(bf*100)/100;
+  SYSTEM_PARAMS.fee_generate_day = gd;
+  SYSTEM_PARAMS.fee_backfill_max_month = bm;
+  BASIC_FEE = SYSTEM_PARAMS.base_fee_amount;
+  // 同步已配置的基础党费应缴金额
+  FEE_CONFIG.forEach(function(c){ if(c.method==='basic'){ c.payable_amount = BASIC_FEE; } });
+  FEE_DETAILS.forEach(function(d){ if(d.method==='basic'){ d.should = BASIC_FEE; } });
+  addOperLog({ action:'系统参数', member:'—', org:'—', detail:'基础党费='+BASIC_FEE.toFixed(2)+'元 · 生成日='+gd+' · 补录跨度='+bm+'月' });
+  showToast('系统参数已保存（基础党费 '+BASIC_FEE.toFixed(2)+' 元/月）');
+  renderOperLog(); renderSummary(); renderDetail();
+}
+function toggleEmpCalc(el){
+  USE_EMPLOYMENT_AS_CALC = el.checked;
+  showToast(USE_EMPLOYMENT_AS_CALC ? '已启用方案二：以在职状态作为核算判定入口' : '已恢复方案一：以党费缴纳配置为判定来源');
+  renderConfig(); renderSummary(); renderDetail();
+}
+
+/* ============ 生成台账（配置 → 明细台账） ============ */
+function generateLedger(){
+  var ym = nextYm(CURRENT_MONTH); // 生成下一收缴月台账（基于通用配置）
+  var exist = FEE_DETAILS.filter(function(d){ return d.ym===ym; }).length;
+  if(exist>0){ showToast(ym+' 台账已生成'); document.getElementById('sMonth').value=ym; renderSummary(); return; }
+  var source = FEE_CONFIG;
+  var enabledCount = source.filter(function(c){ return c.status==='enabled'; }).length;
+  var pendingCount = source.length - enabledCount;
+  var seq = 0;
+  source.filter(function(c){ return c.status==='enabled'; }).forEach(function(c){
+    if(c.start_month > ym) return; // 起缴责任月晚于当月，不纳入
+    seq++;
+    var should = USE_EMPLOYMENT_AS_CALC ? calcShouldByEmployment(c) : calcShould(c);
+    var method = c.method;
+    var rate = method==='basic' ? 0 : rateOf(c.salary_base);
+    if(USE_EMPLOYMENT_AS_CALC && (c.employment_status==='下岗'||c.employment_status==='停薪留职'||c.employment_status==='长期病假')){ rate = 0; }
+    FEE_DETAILS.push({
+      flow_id:'F'+ym.replace('-','')+'-'+String(seq).padStart(3,'0'),
+      member_id:c.member_id, name:c.name, org:c.org, ym:ym, method:method,
+      salary_base:c.salary_base, rate: rate,
+      should:should, actual:0, pay_type:payTypeOf(method), pay_channel:'', employment_status:c.employment_status || '在岗', is_backfill:false,
+      pay_time:'', pay_status:'未缴', audit_status:'无需审核',
+      voucher_no:'', operator:'', notify:'未通知', base_start:c.start_month, consecutiveMiss:0, reject_reason:'', history:[]
+    });
+  });
+  // 建立台账状态记录（PRD §4.2.2）：生成时间 + 状态（已封存台账保持封存）
+  orgsOf(ym).forEach(function(org){ var L=getLedger(org,ym); L.generated_at = todayStr(); if(L.status!=='已封存') L.status='正常'; });
+  var msg = '已按「党费缴纳配置」生成 '+ym+' 台账草稿（共 '+seq+' 人，全未缴，待收缴/审核）'+(USE_EMPLOYMENT_AS_CALC?' · 方案二在职状态核算已应用':'');
+  if(pendingCount>0) msg += '；'+pendingCount+' 人因「待完善」未纳入，请先补全配置';
+  showToast(msg);
+  document.getElementById('sMonth').value = ym;
+  renderSummary();
+}
+function orgsOf(ym){
+  var orgs=[]; FEE_DETAILS.forEach(function(d){ if(d.ym===ym && orgs.indexOf(d.org)<0) orgs.push(d.org); }); return orgs;
+}
+
+/* ============ 汇总台账（超管 / 党委视角） ============ */
+function renderSummary(){
+  var ym = document.getElementById('sMonth').value;
+  var groupEmp = document.getElementById('groupEmp') && document.getElementById('groupEmp').checked;
+  var rows = FEE_DETAILS.filter(function(d){ return d.ym===ym; });
+  var tb = document.getElementById('sumBody');
+  if(rows.length===0){ tb.innerHTML = '<tr><td colspan="12"><div class="empty">该月份暂无台账，点击「生成当前月台账」</div></td></tr>'; return; }
+  // 分组键：默认按组织；方案二按 组织|在职状态
+  var groups = [];
+  rows.forEach(function(d){
+    var key = groupEmp ? (d.org+'|'+d.employment_status) : d.org;
+    if(!groups.some(function(g){ return g.key===key; })) groups.push({ key:key, org:d.org, emp: groupEmp?d.employment_status:null });
+  });
+  tb.innerHTML = groups.map(function(g){
+    var list = rows.filter(function(d){ return g.org===d.org && (!g.emp || d.employment_status===g.emp); });
+    var shouldPeople = list.filter(function(d){ return d.pay_status!=='减免'; });
+    var paidPeople = list.filter(function(d){ return d.pay_status==='已缴'||d.pay_status==='补缴'||d.pay_status==='待审核'; });
+    var unpaid = list.filter(function(d){ return d.pay_status==='未缴'||d.pay_status==='欠缴'; });
+    var oweList = list.filter(function(d){ return d.pay_status==='欠缴'; });
+    var shouldAmt = shouldPeople.reduce(function(a,d){ return a+d.should; },0);
+    var paidAmt = list.reduce(function(a,d){ return a + ((d.pay_status==='已缴'||d.pay_status==='补缴'||d.pay_status==='待审核')? d.should : 0); },0);
+    var oweAmt = oweList.reduce(function(a,d){ return a + d.should; },0);
+    var rate = shouldAmt>0 ? Math.round(paidAmt/shouldAmt*100) : 0;
+    var L = getLedger(g.org, ym);
+    var orgLabel = g.org + (g.emp ? ' · '+employmentLabel(g.emp) : '');
+    var sealBtn = L.status==='已封存'
+      ? '<button class="btn btn-sm btn-secondary" onclick="sealLedger(\''+g.org+'\',\''+ym+'\',false)">解封</button>'
+      : '<button class="btn btn-sm btn-ghost" onclick="sealLedger(\''+g.org+'\',\''+ym+'\',true)">封存</button>';
+    return '<tr>'+
+      '<td>'+orgLabel+'</td>'+
+      '<td class="mono">'+ym+'</td>'+
+      '<td class="mono">'+shouldPeople.length+'</td>'+
+      '<td class="mono">'+paidPeople.length+'</td>'+
+      '<td class="mono" style="color:'+(unpaid.length>0?'var(--brand-red)':'var(--state-green-text)')+'">'+unpaid.length+'</td>'+
+      '<td class="mono">'+shouldAmt.toFixed(2)+'</td>'+
+      '<td class="mono">'+paidAmt.toFixed(2)+'</td>'+
+      '<td class="mono" style="color:'+(oweAmt>0?'var(--brand-red)':'var(--state-green-text)')+'">'+oweAmt.toFixed(2)+'</td>'+
+      '<td class="mono">'+rate+'%</td>'+
+      '<td>'+ledgerStateTag(L.status)+'</td>'+
+      '<td class="mono">'+(L.generated_at||'—')+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-sm btn-primary" onclick="openDetail(\''+g.org+'\',\''+ym+'\''+(g.emp?(',\''+g.emp+'\''):'')+')">查看明细</button>'+sealBtn+'</td>'+
+    '</tr>';
+  }).join('');
+}
+function sealLedger(org, ym, seal){
+  var L = getLedger(org, ym);
+  L.status = seal ? '已封存' : '正常';
+  addOperLog({ action:'台账'+(seal?'封存':'解封'), member:'—', org:org, detail:ym+' 台账'+(seal?'已封存，禁止补录':'已解封') });
+  showToast(org+' · '+ym+' 台账已'+(seal?'封存':'解封'));
+  renderSummary(); renderOperLog();
+}
+
+/* ============ 明细清单二级页面（抽屉） ============ */
+var curDetail = { org:'机关支部', ym:'2026-08', emp:null };
+var curPayFlow = null, curPayMode = null;
+function openDetail(org, ym, emp){
+  curDetail = { org:org, ym:ym, emp:emp||null };
+  document.getElementById('detailTitle').textContent = org+' · '+ym+' 党费明细清单'+(emp?(' · '+employmentLabel(emp)):'');
+  ['dStatus','dAudit','dOverdue','dPayType','dEmp'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  renderDetail();
+  switchView('detail');
+}
+function renderDetail(){
+  var org = curDetail.org, ym = curDetail.ym;
+  var s = document.getElementById('dStatus').value;
+  var au = document.getElementById('dAudit').value;
+  var od = document.getElementById('dOverdue').value;
+  var pt = document.getElementById('dPayType').value;
+  var em = document.getElementById('dEmp').value || curDetail.emp || '';
+  var rows = FEE_DETAILS.filter(function(d){
+    if(d.org!==org || d.ym!==ym) return false;
+    if(s!=='' && d.pay_status!==s) return false;
+    if(au!=='' && d.audit_status!==au) return false;
+    if(od==='normal' && d.consecutiveMiss!==0) return false;
+    if(od==='overdue' && !(d.consecutiveMiss>0 && d.consecutiveMiss<6)) return false;
+    if(od==='red' && d.consecutiveMiss<6) return false;
+    if(pt!=='' && d.pay_type!==pt) return false;
+    if(em!=='' && d.employment_status!==em) return false;
+    return true;
+  });
+  var tb = document.getElementById('detailBody');
+  // 待审核枚举条
+  var pending = rows.filter(function(d){ return d.audit_status==='待审核'; });
+  var bar = document.getElementById('detailAuditBar');
+  if(bar){
+    if(pending.length>0){
+      bar.innerHTML = '<div class="audit-pending-bar"><svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 8v5M12 16.5v.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg><span>当前有 <b>'+pending.length+'</b> 条记录待审核</span><button class="btn btn-sm btn-primary" onclick="filterPendingAudit()">仅看待审核</button></div>';
+    } else {
+      bar.innerHTML = '';
+    }
+  }
+  if(rows.length===0){ tb.innerHTML = '<tr><td colspan="11"><div class="empty">暂无明细</div></td></tr>'; renderUrge(); return; }
+  tb.innerHTML = rows.map(function(d){
+    var overdue = d.consecutiveMiss>=6 ? '<span class="tag red">红色·连续'+d.consecutiveMiss+'月</span>' : (d.consecutiveMiss>0?'<span class="tag orange">逾期'+d.consecutiveMiss+'月</span>':'<span class="tag green">正常</span>');
+    var vno = d.voucher_no || '—';
+    var voucherCell = d.voucher_no ? '<a class="link" href="javascript:void(0)" onclick="showVoucher(\''+d.flow_id+'\')">'+vno+'</a>' : vno;
+    var ops = detailOps(d);
+    return '<tr>'+
+      '<td><div class="name-cell"><span class="av">'+d.name.charAt(0)+'</span>'+d.name+'</div></td>'+
+      '<td>'+empTag(d.employment_status)+'</td>'+
+      '<td>'+statusTag(d.pay_status)+'</td>'+
+      '<td>'+auditTag(d.audit_status)+'</td>'+
+      '<td>'+(d.pay_type==='BASE_FEE'?'<span class="tag gold">按基础党费</span>':'<span class="tag blue">按工资基数</span>')+'</td>'+
+      '<td>'+overdue+'</td>'+
+      '<td class="mono">'+d.base_start+'</td>'+
+      '<td>'+notifyTag(d.notify)+'</td>'+
+      '<td class="mono">'+d.should.toFixed(2)+'</td>'+
+      '<td class="mono">'+voucherCell+'</td>'+
+      '<td style="text-align:right">'+ops+'</td>'+
+    '</tr>';
+  }).join('');
+  renderUrge();
+}
+function filterPendingAudit(){
+  var el = document.getElementById('dAudit'); if(el) el.value='待审核';
+  renderDetail();
+}
+function detailOps(d){
+  var fid = d.flow_id;
+  if(d.pay_status==='待审核'||d.audit_status==='待审核'){
+    return '<button class="btn btn-sm btn-primary" onclick="showVoucher(\''+fid+'\')">审核凭证</button>'+
+           '<button class="btn btn-sm btn-ghost" onclick="openFeeDrawer(\''+fid+'\')">明细</button>';
+  }
+  if(d.pay_status==='未缴'||d.pay_status==='欠缴'){
+    return '<button class="btn btn-sm btn-primary" onclick="registerPay(\''+fid+'\')">登记缴费</button>'+
+           '<button class="btn btn-sm btn-ghost" onclick="openReduce(\''+fid+'\')">减免</button>'+
+           (d.pay_status==='欠缴'?'<button class="btn btn-sm btn-secondary" onclick="makeupPay(\''+fid+'\')">补缴</button>':'')+
+           '<button class="btn btn-sm btn-ghost" onclick="openFeeDrawer(\''+fid+'\')">明细</button>';
+  }
+  return '<button class="btn btn-sm btn-ghost" onclick="openFeeDrawer(\''+fid+'\')">明细</button>'+
+         (d.pay_status==='减免'?'':'<button class="btn btn-sm btn-ghost" onclick="openReduce(\''+fid+'\')">减免</button>');
+}
+function auditTag(s){
+  if(s==='待审核') return '<span class="tag orange">待审核</span>';
+  if(s==='已通过') return '<span class="tag green">已通过</span>';
+  if(s==='已驳回') return '<span class="tag red">已驳回</span>';
+  return '<span class="tag gray">无需审核</span>';
+}
+function notifyTag(s){ return s==='已通知' ? '<span class="tag green">已通知</span>' : '<span class="tag gray">未通知</span>'; }
+
+function auditPass(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  d.pay_status='已缴'; d.audit_status='已通过'; d.actual=d.should; d.operator='王芳';
+  if(!d.pay_time) d.pay_time='2026-08-11 15:00';
+  showToast(d.name+' 凭证审核通过，状态变更为已缴');
+  renderDetail(); renderSummary(); renderKpis(); renderUrge();
+}
+function auditReject(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  d.pay_status='欠缴'; d.audit_status='已驳回'; d.reject_reason='凭证信息与应缴金额不符，请重新上传';
+  showToast(d.name+' 审核驳回，已退回并通知党员');
+  renderDetail(); renderSummary(); renderKpis(); renderUrge();
+}
+
+/* ============ 台账补录（新转入 / 新转正） ============ */
+function openSupplement(){
+  var sel = document.getElementById('spMember');
+  var ym = document.getElementById('spMonth').value;
+  var inLedger = FEE_DETAILS.filter(function(d){ return d.ym===ym; }).map(function(d){ return d.member_id; });
+  var cand = FEE_CONFIG.filter(function(c){ return c.status==='enabled' && inLedger.indexOf(c.member_id)<0; });
+  sel.innerHTML = cand.map(function(c){ return '<option value="'+c.member_id+'">'+c.name+'（'+c.org+'·'+(c.method==='salary'?'工资基数':'基础党费')+'·'+employmentLabel(c.employment_status)+'）</option>'; }).join('') || '<option>无待补录人员</option>';
+  openMask('supplementModal');
+}
+// ym 月份差（b - a，单位月）
+function ymDiff(a,b){ var pa=String(a).split('-'),pb=String(b).split('-'); return (Number(pb[0])-Number(pa[0]))*12 + (Number(pb[1])-Number(pa[1])); }
+function submitSupplement(){
+  var ym = document.getElementById('spMonth').value;
+  var mid = document.getElementById('spMember').value;
+  var c = FEE_CONFIG.find(function(x){ return x.member_id===mid; });
+  if(!c){ showToast('请选择补录党员'); return; }
+  // 已封存台账不可补录（PRD §4.3）
+  var L = getLedger(c.org, ym);
+  if(L.status==='已封存'){ showToast('该组织'+ym+'台账已封存，禁止补录'); return; }
+  // 补录跨度限制（PRD §4.4.2 fee_backfill_max_month）
+  if(ymDiff(CURRENT_MONTH, ym) > SYSTEM_PARAMS.fee_backfill_max_month){ showToast('补录月份超出允许跨度（'+SYSTEM_PARAMS.fee_backfill_max_month+' 个月），不可补录'); return; }
+  if(FEE_DETAILS.some(function(d){ return d.ym===ym && d.member_id===mid; })){ showToast('该党员当月台账已存在，无需补录'); return; }
+  if(c.start_month > ym){ showToast('起缴责任月('+c.start_month+')晚于'+ym+'，暂不纳入'); return; }
+  var should = USE_EMPLOYMENT_AS_CALC ? calcShouldByEmployment(c) : calcShould(c);
+  var rate = c.method==='basic' ? 0 : rateOf(c.salary_base);
+  if(USE_EMPLOYMENT_AS_CALC && (c.employment_status==='下岗'||c.employment_status==='停薪留职'||c.employment_status==='长期病假')) rate = 0;
+  FEE_DETAILS.push({
+    flow_id:'F'+ym.replace('-','')+'-S'+String(FEE_DETAILS.length).slice(-3),
+    member_id:c.member_id, name:c.name, org:c.org, ym:ym, method:c.method,
+    salary_base:c.salary_base, rate: rate,
+    should:should, actual:0, pay_type:payTypeOf(c.method), pay_channel:'', employment_status:c.employment_status || '在岗', is_backfill:true,
+    pay_time:'', pay_status:'未缴', audit_status:'无需审核',
+    voucher_no:'', operator:'', notify:'已通知', base_start:c.start_month, consecutiveMiss:0, reject_reason:'', history:['补录生成']
+  });
+  // 台账标记为已补录（PRD §4.2.2 / §4.3）
+  L.status = '已补录'; L.backfilled = true; if(!L.generated_at) L.generated_at = todayStr();
+  addOperLog({ action:'台账补录', member:c.name, org:c.org, detail:ym+' 补录（按'+(c.method==='salary'?'工资基数':'基础党费')+'·应缴 '+should.toFixed(2)+'元·在职状态 '+employmentLabel(c.employment_status)+'）' });
+  closeMask('supplementModal');
+  showToast('已为 '+c.name+' 补录 '+ym+' 台账（按'+(c.method==='salary'?'工资基数':'基础党费')+'·应缴 '+should.toFixed(2)+' 元·台账已置「已补录」），汇总已同步');
+  renderDetail(); renderSummary(); renderKpis(); renderUrge(); renderOperLog();
+}
+
+// 登记缴费（线下，需上传凭证，免审核）
+function registerPay(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  if(!d) return;
+  curPayFlow = flowId; curPayMode = 'register';
+  document.getElementById('payModalTitle').textContent = '登记缴费';
+  document.getElementById('payName').value = d.name + '（'+d.org+' · '+d.ym+'）';
+  document.getElementById('payMode').value = d.pay_channel && d.pay_channel!=='线下登记' ? d.pay_channel : '现金';
+  document.getElementById('payTime').value = '2026-08-11 10:30';
+  document.getElementById('payVoucher').value = 'V'+(d.flow_id.replace('F',''))+'-1';
+  document.getElementById('payNote').value = '';
+  document.getElementById('payFile').value = '';
+  openMask('payModal');
+}
+
+// 补缴（线下，需上传凭证，免审核）
+function makeupPay(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  if(!d) return;
+  curPayFlow = flowId; curPayMode = 'makeup';
+  document.getElementById('payModalTitle').textContent = '补缴党费';
+  document.getElementById('payName').value = d.name + '（'+d.org+' · '+d.ym+'）';
+  document.getElementById('payMode').value = '线下登记';
+  document.getElementById('payTime').value = '2026-08-11 11:00';
+  document.getElementById('payVoucher').value = 'V'+(d.flow_id.replace('F',''))+'-1';
+  document.getElementById('payNote').value = '';
+  document.getElementById('payFile').value = '';
+  openMask('payModal');
+}
+
+// 提交缴费登记 / 补缴（含凭证）
+function submitPay(){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===curPayFlow; });
+  if(!d) return;
+  var vno = (document.getElementById('payVoucher').value||'').trim();
+  var file = document.getElementById('payFile').value;
+  if(!vno){ showToast('请填写凭证编号'); return; }
+  if(!file){ showToast('请上传缴费凭证（回单/截图）'); return; }
+  var mode = curPayMode;
+  if(mode==='makeup') d.pay_status='补缴'; else d.pay_status='已缴';
+  d.actual=d.should;
+  d.pay_channel = document.getElementById('payMode').value;
+  d.pay_time = document.getElementById('payTime').value || '2026-08-11';
+  d.voucher_no = vno;
+  d.operator = '王芳';
+  d.consecutiveMiss = 0;
+  d.audit_status = '无需审核';
+  d.history = (d.history||[]).concat([(mode==='makeup'?'补缴':'登记缴费')+'·'+d.pay_type+'·凭'+vno]);
+  closeMask('payModal');
+  showToast(d.name+' 党费已'+(mode==='makeup'?'补缴':'登记缴纳')+'，电子凭证已生成（线下免审）');
+  renderDetail(); renderSummary(); renderKpis(); renderUrge();
+}
+
+// 减免申请
+function openReduce(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  document.getElementById('rdName').value = d.name + '（'+d.org+'）';
+  document.getElementById('rdName').setAttribute('data-flow', flowId);
+  document.getElementById('rdAmount').value = 0;
+  document.getElementById('rdNote').value = '';
+  openMask('reduceModal');
+}
+function submitReduction(){
+  var flowId = document.getElementById('rdName').getAttribute('data-flow');
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  var type = document.getElementById('rdType').value;
+  var amt = parseFloat(document.getElementById('rdAmount').value)||0;
+  d.pay_status='减免'; d.actual=amt; d.should=amt; d.rate=0; d.pay_channel='减免'; d.salary_base=0; d.consecutiveMiss=0; d.audit_status='已通过';
+  d.history = (d.history||[]).concat([type+' 减免审批通过']);
+  closeMask('reduceModal');
+  showToast(d.name+' 减免申请已提交，进入逐级审批（演示：已按新标准核算）');
+  renderDetail(); renderSummary(); renderKpis(); renderUrge();
+}
+
+// 缴费明细抽屉
+function openFeeDrawer(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  document.getElementById('feeDrawerTitle').textContent = d.name + ' · ' + d.ym + ' 党费明细';
+  var calc = (d.pay_status==='减免')
+    ? '<div class="check-result ok">减免党员：按审批后标准 '+d.actual.toFixed(2)+' 元/月核算，无需缴纳。</div>'
+    : (d.method==='basic'
+        ? '<div class="check-result ok">基础党费党员（企业当月不发工资）：固定 '+d.should.toFixed(2)+' 元/月，无需按工资基数核算。</div>'
+        : '<div class="kv-row"><span class="k">计算明细</span><span class="v">工资基数 '+d.salary_base+' 元 × '+d.rate+'% = '+d.should.toFixed(2)+' 元/月</span></div>');
+  document.getElementById('feeDrawerBody').innerHTML =
+    '<div><div class="sub-note" style="margin-bottom:6px">核算明细（党员端透明可见）</div>'+calc+'</div>'+
+    '<div><div class="sub-note" style="margin-bottom:6px">缴费信息</div>'+
+      kv('缴费年月', d.ym)+
+      kv('应交金额', d.should.toFixed(2)+' 元')+
+      kv('实缴金额', (d.actual||0).toFixed(2)+' 元')+
+      kv('缴费方式', d.pay_channel||'—')+
+      kv('缴费时间', d.pay_time||'—')+
+      kv('状态', statusTag(d.pay_status))+
+      kv('凭证号', d.voucher_no||'—')+
+      kv('操作人', d.operator||'—')+
+    '</div>'+
+    '<div><div class="sub-note" style="margin-bottom:6px">近期记录</div>'+
+      (d.history&&d.history.length? '<div class="chips">'+d.history.map(function(h){ return '<span class="tag gray">'+h+'</span>'; }).join('')+'</div>' : '<div class="muted">无</div>')+
+    '</div>'+
+    '<div style="display:flex;gap:10px">'+
+      (d.pay_status==='欠缴'?'<button class="btn btn-primary" onclick="registerPay(\''+flowId+'\');closeMask(\'feeDrawer\')">登记缴费</button><button class="btn btn-ghost" onclick="openReduce(\''+flowId+'\');closeMask(\'feeDrawer\')">申请减免</button>':'')+
+      ((d.pay_status==='已缴'||d.pay_status==='补缴')?'<button class="btn btn-secondary" onclick="showVoucher(\''+flowId+'\');closeMask(\'feeDrawer\')">查看电子凭证</button>':'')+
+    '</div>';
+  openMask('feeDrawer');
+}
+function kv(k,v){ return '<div class="kv-row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+
+// 电子凭证
+function showVoucher(flowId){
+  var d = FEE_DETAILS.find(function(x){ return x.flow_id===flowId; });
+  var auditActs = d.audit_status==='待审核'
+    ? '<div style="display:flex;gap:10px;margin-top:10px">'+
+        '<button class="btn btn-primary" onclick="auditPass(\''+flowId+'\');closeMask(\'voucherDrawer\')">审核通过</button>'+
+        '<button class="btn btn-danger" onclick="auditReject(\''+flowId+'\');closeMask(\'voucherDrawer\')">审核驳回</button>'+
+      '</div>'
+    : '';
+  document.getElementById('voucherBody').innerHTML =
+    '<div class="card" style="border-style:dashed">'+
+      '<div class="card-b" style="text-align:center">'+
+        '<div style="font-size:15px;font-weight:700;color:var(--brand-red)">中国共产党党费缴纳电子凭证</div>'+
+        '<div class="muted" style="margin:6px 0 14px">中共XX街道机关支部</div>'+
+        kv('凭证编号', d.voucher_no)+
+        kv('党员姓名', d.name)+
+        kv('缴费年月', d.ym)+
+        kv('缴纳金额', d.actual.toFixed(2)+' 元')+
+        kv('缴费方式', d.pay_channel||d.pay_type||'—')+
+        kv('缴费时间', d.pay_time||'—')+
+        kv('开票单位', '中共XX街道机关支部委员会')+
+        '<div style="margin-top:14px"><svg viewBox="0 0 100 100" width="84" height="84" style="margin:0 auto;display:block"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--brand-red)" stroke-width="3"/><path d="M30 52l14 14 26-30" fill="none" stroke="var(--brand-red)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="muted" style="margin-top:6px">电子签章已验真</div></div>'+
+        auditActs+
+      '</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px">'+
+      '<button class="btn btn-secondary" onclick="showToast(\'凭证已下载（演示）\')">下载 PDF</button>'+
+      '<button class="btn btn-ghost" onclick="showToast(\'凭证已打印（演示）\')">打印</button>'+
+    '</div>';
+  openMask('voucherDrawer');
+}
+
+/* ============ 党费使用 ============ */
+function approveLevel(amount){
+  if(amount>=20000) return '党委集体研究';
+  if(amount>=5000) return '党委审批';
+  if(amount>=1000) return '党总支审批';
+  return '支部审批';
+}
+function renderExpenses(){
+  document.getElementById('expBody').innerHTML = EXPENSES.map(function(e){
+    var op = e.status==='待审批'
+      ? '<button class="btn btn-sm btn-primary" onclick="approveExpense(\''+e.id+'\')">审批</button>'
+      : '<span class="muted">—</span>';
+    return '<tr><td class="mono">'+e.id+'</td><td>'+e.item+'</td><td class="mono">'+Number(e.amount).toFixed(2)+'</td>'+
+      '<td>'+statusTag(e.level)+'</td><td class="mono">'+e.invoice+'</td><td>'+statusTag(e.status)+'</td>'+
+      '<td style="text-align:right">'+op+'</td></tr>';
+  }).join('');
+}
+function approveExpense(id){
+  var e = EXPENSES.find(function(x){ return x.id===id; });
+  e.status='已审批';
+  showToast('支出「'+e.item+'」已审批通过（'+e.level+'）');
+  renderExpenses();
+}
+function openExpenseModal(){
+  var amt = parseFloat(document.getElementById('exAmount').value)||800;
+  document.getElementById('exCheck').textContent = '将按金额自动匹配审批层级：'+approveLevel(amt)+'。提交后进入对应审批流。';
+  openMask('expenseModal');
+}
+function submitExpense(){
+  var item = document.getElementById('exItem').value.trim();
+  var amount = parseFloat(document.getElementById('exAmount').value)||0;
+  var cat = document.getElementById('exCat').value;
+  var invoice = document.getElementById('exInvoice').value.trim();
+  var note = document.getElementById('exNote').value.trim();
+  if(!item){ showToast('请填写支出项目'); return; }
+  if(amount<=0){ showToast('金额必须大于 0'); return; }
+  if(!invoice){ showToast('每笔支出必须关联票据'); return; }
+  var level = approveLevel(amount);
+  var id = 'E2026-0'+(23+EXPENSES.length);
+  EXPENSES.push({ id:id, item:item, amount:amount, cat:cat, level:level, invoice:invoice, status: amount>=1000?'待审批':'已审批', applyOrg:'机关支部', date:'2026-08-11', note:note });
+  closeMask('expenseModal');
+  showToast('支出申请已提交：'+item+'（'+level+'）');
+  renderExpenses();
+}
+
+/* ============ 公示 / 上缴 / 结余 ============ */
+function renderPublicity(){
+  document.getElementById('pubBody').innerHTML = PUBLICITY.map(function(p){
+    var op = p.status==='待发布'
+      ? '<button class="btn btn-sm btn-primary" onclick="publishPublicity(\''+p.id+'\')">发布</button>'
+      : '<span class="muted">已公示</span>';
+    return '<tr><td>'+p.period+'</td><td class="mono">'+Number(p.income).toFixed(2)+'</td><td class="mono">'+Number(p.expense).toFixed(2)+'</td><td>'+statusTag(p.status)+'</td><td style="text-align:right">'+op+'</td></tr>';
+  }).join('');
+}
+function publishPublicity(id){
+  var p = PUBLICITY.find(function(x){ return x.id===id; });
+  p.status='已发布';
+  showToast('公示表「'+p.period+'」已发布至党建门户');
+  renderPublicity();
+}
+function renderPayup(){
+  document.getElementById('payupBody').innerHTML = PAYUP.map(function(p){
+    var op = p.status==='已上缴'
+      ? '<button class="btn btn-sm btn-primary" onclick="reconcile(\''+p.id+'\')">对账</button>'
+      : '<span class="muted">'+p.status+'</span>';
+    return '<tr><td class="mono">'+p.id+'</td><td>'+p.period+'</td><td class="mono">'+Number(p.amount).toFixed(2)+'</td><td>'+statusTag(p.status)+'</td><td style="text-align:right">'+op+'</td></tr>';
+  }).join('');
+}
+function reconcile(id){
+  var p = PAYUP.find(function(x){ return x.id===id; });
+  p.status='已对账';
+  showToast('上缴单 '+p.id+' 已自动对账完成');
+  renderPayup();
+}
+function renderBalance(){
+  var b = BALANCE;
+  var balance = b.totalIncome - b.totalPayup - b.totalExpense - b.totalPublicity;
+  document.getElementById('balanceBody').innerHTML =
+    '<div class="metric-strip" style="margin-bottom:var(--space-5)">'+
+      metric('收缴总额', b.totalIncome, 'blue')+
+      metric('上缴合计', b.totalPayup, '')+
+      metric('使用合计', b.totalExpense, 'warn')+
+      metric('公示扣减', b.totalPublicity, '')+
+    '</div>'+
+    '<div class="audit-item" style="border-color:var(--brand-gold)"><div class="ai-main"><div class="nm">当前结余：'+balance.toFixed(2)+' 元</div>'+
+      '<div class="ds">'+b.org+' · '+b.year+' 年 · 结余=收缴总额−上缴−使用−公示扣减 · '+b.note+'</div></div>'+
+      '<div class="ai-act"><span class="tag gold">年度结转</span></div></div>'+
+    '<div class="kv-row"><span class="k">结余使用约束</span><span class="v">须符合党费使用范围并经对应层级审批，禁止挪作他用，变动全程留痕</span></div>';
+}
+function metric(t,v,c){
+  var cls = c==='blue'?'metric':(c==='warn'?'metric warn':'metric');
+  return '<div class="'+cls+'"><div class="m-t">'+t+'</div><div class="m-v">'+Number(v).toFixed(2)+' 元</div></div>';
+}
+
+/* ============ 导出（PRD §4.2.5 · 汇总 + 明细 两 Sheet） ============ */
+function csvCell(v){ v = (v==null?'':String(v)); if(/[",\n]/.test(v)) v='"'+v.replace(/"/g,'""')+'"'; return v; }
+function exportLedger(){
+  var ym = document.getElementById('sMonth') ? document.getElementById('sMonth').value : CURRENT_MONTH;
+  var lines = [];
+  // —— Sheet 1：党费汇总台账 ——
+  lines.push('党费汇总台账（'+ym+'）');
+  lines.push(['党组织名称','所属月份','应交人数','实缴人数','未缴人数','应缴金额(元)','实缴金额(元)','欠缴总额(元)','缴纳率','状态','生成时间'].map(csvCell).join(','));
+  var orgs=[]; FEE_DETAILS.filter(function(d){ return d.ym===ym; }).forEach(function(d){ if(orgs.indexOf(d.org)<0) orgs.push(d.org); });
+  orgs.forEach(function(org){
+    var list = FEE_DETAILS.filter(function(d){ return d.org===org && d.ym===ym; });
+    var shouldPeople = list.filter(function(d){ return d.pay_status!=='减免'; });
+    var paidPeople = list.filter(function(d){ return d.pay_status==='已缴'||d.pay_status==='补缴'||d.pay_status==='待审核'; });
+    var unpaid = list.filter(function(d){ return d.pay_status==='未缴'||d.pay_status==='欠缴'; });
+    var oweList = list.filter(function(d){ return d.pay_status==='欠缴'; });
+    var shouldAmt = shouldPeople.reduce(function(a,d){ return a+d.should; },0);
+    var paidAmt = list.reduce(function(a,d){ return a + ((d.pay_status==='已缴'||d.pay_status==='补缴'||d.pay_status==='待审核')? d.should : 0); },0);
+    var oweAmt = oweList.reduce(function(a,d){ return a+d.should; },0);
+    var rate = shouldAmt>0 ? Math.round(paidAmt/shouldAmt*100) : 0;
+    var L = getLedger(org,ym);
+    lines.push([org, ym, shouldPeople.length, paidPeople.length, unpaid.length, shouldAmt.toFixed(2), paidAmt.toFixed(2), oweAmt.toFixed(2), rate+'%', L.status, L.generated_at||''].map(csvCell).join(','));
+  });
+  // —— Sheet 2：党费明细清单 ——
+  lines.push('');
+  lines.push('党费明细清单（'+ym+'）');
+  lines.push(['姓名','在职状态','缴纳状态','审核状态','缴纳类型','缴费方式','所属月份','逾期','起缴责任月','应缴(元)','实缴(元)','凭证号','是否补录'].map(csvCell).join(','));
+  FEE_DETAILS.filter(function(d){ return d.ym===ym; }).forEach(function(d){
+    var overdue = d.consecutiveMiss>=6 ? '红色·连续'+d.consecutiveMiss+'月' : (d.consecutiveMiss>0 ? '逾期'+d.consecutiveMiss+'月' : '正常');
+    lines.push([d.name, d.employment_status, d.pay_status, d.audit_status, (d.pay_type==='BASE_FEE'?'按基础党费':'按工资基数'), d.pay_channel||'—', d.ym, overdue, d.base_start, d.should.toFixed(2), (d.actual||0).toFixed(2), d.voucher_no||'', d.is_backfill?'是':'否'].map(csvCell).join(','));
+  });
+  var csv = '﻿'+lines.join('\n');
+  try {
+    if(typeof URL!=='undefined' && URL.createObjectURL){
+      var blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+      var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '党费台账_'+ym+'.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+  } catch(e){ /* 测试/无头环境忽略下载 */ }
+  addOperLog({ action:'导出台账', member:'—', org:'—', detail:ym+' 汇总+明细两 Sheet 导出（PRD §4.2.5）' });
+  showToast('党费台账已导出（'+ym+' · 汇总+明细两 Sheet · 审计留痕）');
+  renderOperLog();
+  return csv;
+}
+
+/* ============ 初始化 ============ */
+function populateOrgFilter(){
+  var orgs = [];
+  FEE_CONFIG.forEach(function(c){ if(orgs.indexOf(c.org)<0) orgs.push(c.org); });
+  var opts = '<option value="">全部党组织</option>' + orgs.map(function(o){ return '<option>'+o+'</option>'; }).join('');
+  var f = document.getElementById('cfOrg'); if(f) f.innerHTML = opts;
+  var i = document.getElementById('cfOrgInput'); if(i) i.innerHTML = orgs.map(function(o){ return '<option>'+o+'</option>'; }).join('');
+}
+function init(){
+  populateOrgFilter();
+  syncRoster();
+  renderKpis(); renderRates(); renderUrge(); renderConfig(); renderSummary(); renderOperLog();
+  renderExpenses(); renderPublicity(); renderPayup(); renderBalance();
+  var h = (location.hash||'#calc').replace('#','');
+  if(h!=='config' && h!=='calc' && h!=='use' && h!=='detail') h='calc';
+  switchView(h);
+}
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('hashchange', function(){ var h=(location.hash||'#calc').replace('#',''); if(h==='config'||h==='calc'||h==='use'||h==='detail') switchView(h); });
+</script>
+</body>
+</html>

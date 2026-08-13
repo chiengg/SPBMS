@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>监督考核 · 党建管理系统</title>
+<!--
+  页面：04 监督考核（模块 4.6 · PC）
+  设计系统：设计令牌.md 的 :root 变量块（原样保留）
+  蓝色新增项（验收③）：① 积分明细溯源（每行关联来源业务单据ID + 一键溯源）；② 积分申诉状态机（发起→待审核蓝→通过绿/驳回红→完成，驳回填因+二次复核）；
+    ③ 党风廉政·信访举报受理闭环（登记→分办→初核→立案/了结→反馈；蓝处理中/红风险/绿了结；举报人脱敏）；
+    ④ 党风廉政·党纪处分工作流（5 级处分分级审批 + 执行归档）；⑤ 预警清单补充换届/信访超期预警。
+  交互：子页切换；积分明细溯源下钻；申诉发起/审核/驳回二次复核；预警等级筛选；信访状态机；处分工作流。
+-->
+<style>
+:root {
+  --brand-red: #C21F30; --brand-gold: #C89A4B; --brand-blue: #2D6DB5; --state-green: #2E8B57; --state-orange: #D97706;
+  --bg-page: #F5F6F8; --bg-card: #FFFFFF; --text-primary: #1F2329; --text-secondary: #6B7280;
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
+  --screen-bg-top: #0F1B2D; --screen-bg-bottom: #12233B; --screen-panel: #12233B; --screen-card: #16263F; --screen-border: #243B5C;
+  --screen-divider: #1E324F; --screen-text: #E6ECF5; --screen-text-sub: #9FB0C4; --screen-text-muted: #6E8099;
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F; --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC", "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-num: var(--font-sans);
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+  --nav-width: 240px; --topbar-height: 64px; --content-padding: 24px; --card-gap: 16px; --aside-width: 420px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none; --shadow-xs: 0 1px 2px rgba(31,35,41,0.06); --shadow-sm: 0 2px 8px rgba(31,35,41,0.08); --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--font-sans); background: var(--bg-page); color: var(--text-primary); font-size: var(--fs-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { text-decoration: none; color: inherit; } button { font-family: inherit; cursor: pointer; }
+.sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: var(--nav-width); background: linear-gradient(180deg, #A81220 0%, #C21F30 35%, #E53B32 70%, #F25A48 100%); border-right: none; display: flex; flex-direction: column; z-index: 210; color: rgba(255,255,255,0.95); }
+.sidebar .nav-deco { position: absolute; left: 0; right: 0; bottom: 0; height: 260px; pointer-events: none; z-index: 0; background: url('assets/huabiao.png') no-repeat left bottom; background-size: contain; opacity: 0.85; }
+.sidebar .logo { height: var(--topbar-height); display: flex; align-items: center; gap: 10px; padding: 0 var(--space-5); border-bottom: 1px solid rgba(255,255,255,0.15); color: #fff; }
+.sidebar .logo .emblem { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); display: grid; place-items: center; flex: none; }
+.sidebar .logo .emblem svg { width: 18px; height: 18px; }
+.sidebar .logo .t { font-size: 15px; font-weight: 700; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.sidebar .logo .t small { display: block; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.75); letter-spacing: 0.5px; }
+.nav { flex: 1; overflow-y: auto; padding: var(--space-3) 0; position: relative; z-index: 1; }
+.nav .group { font-size: 11px; color: rgba(255,255,255,0.6); padding: var(--space-3) var(--space-5) var(--space-1); letter-spacing: .5px; }
+.nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 var(--space-5); color: rgba(255,255,255,0.9); font-size: var(--fs-body); position: relative; transition: background .12s ease; }
+.nav-item svg { width: 17px; height: 17px; flex: none; color: #FFD260; }
+.nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.16); color: #fff; font-weight: 600; }
+.nav-item.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: #FFD260; border-radius: 0 2px 2px 0; box-shadow: 0 0 6px rgba(255,210,96,0.5); }
+.nav-item.active svg { color: #FFD260; }
+.nav-item .badge { margin-left: auto; min-width: 16px; height: 16px; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 11px; display: grid; place-items: center; }
+.nav-sub { padding-left: 18px; } .nav-sub .nav-item { height: 34px; font-size: 13px; }
+.main { margin-left: var(--nav-width); min-height: 100vh; display: flex; flex-direction: column; }
+.topbar { height: var(--topbar-height); position: sticky; top: 0; background: var(--bg-card); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: var(--space-4); padding: 0 var(--space-6); z-index: 200; }
+.crumb { font-size: var(--fs-body); color: var(--text-secondary); display: flex; align-items: center; gap: 6px; } .crumb b { color: var(--text-primary); font-weight: 600; }
+.search { margin-left: 24px; flex: 1; max-width: 360px; position: relative; }
+.search input { width: 100%; height: 34px; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0 12px 0 34px; font-size: 13px; background: var(--bg-page); }
+.search input:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); background: #fff; }
+.search svg { position: absolute; left: 11px; top: 9px; width: 16px; height: 16px; color: var(--text-secondary); }
+.top-actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radius-md); border: none; background: transparent; display: grid; place-items: center; color: var(--text-primary); position: relative; }
+.icon-btn:hover { background: var(--bg-page); } .icon-btn svg { width: 18px; height: 18px; }
+.icon-btn .dot { position: absolute; top: 7px; right: 8px; min-width: 15px; height: 15px; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand-red); color: #fff; font-size: 10px; display: grid; place-items: center; border: 2px solid #fff; }
+.org-sel { height: 34px; padding: 0 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-card); display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.org-sel svg { width: 15px; height: 15px; color: var(--text-secondary); }
+.user { display: flex; align-items: center; gap: 9px; padding-left: var(--space-3); border-left: 1px solid var(--border-color); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-blue); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+.user .nm { font-size: 13px; } .user .role { font-size: 11px; color: var(--text-secondary); }
+.role-chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: var(--radius-pill); background: var(--state-blue-bg); color: var(--state-blue-text); font-size: 11px; font-weight: 600; }
+.content { padding: var(--content-padding); display: flex; flex-direction: column; gap: var(--card-gap); }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.page-head h1 { font-size: var(--fs-title); font-weight: 700; } .page-head .sub { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 2px; }
+.subtabs { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
+.subtabs button { height: 30px; padding: 0 16px; border: none; background: transparent; border-radius: var(--radius-sm); font-size: var(--fs-body); color: var(--text-secondary); }
+.subtabs button.active { background: var(--brand-red); color: #fff; font-weight: 600; }
+.btn { height: 32px; padding: 0 16px; border-radius: var(--radius-md); font-size: var(--fs-body); border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .14s ease, border-color .14s ease; white-space: nowrap; }
+.btn svg { width: 15px; height: 15px; }
+.btn-primary { background: var(--brand-red); color: #fff; } .btn-primary:hover { background: #A3162A; }
+.btn-secondary { background: #fff; color: var(--text-primary); border-color: var(--border-color); } .btn-secondary:hover { background: var(--bg-page); }
+.btn-ghost { background: transparent; color: var(--brand-red); padding: 0 8px; } .btn-ghost:hover { background: rgba(194,31,48,0.06); }
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: var(--radius-sm); font-size: var(--fs-caption); font-weight: 500; line-height: 1; white-space: nowrap; }
+.tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.tag.red { background: var(--state-red-bg); color: var(--state-red-text); } .tag.orange { background: var(--state-orange-bg); color: var(--state-orange-text); }
+.tag.blue { background: var(--state-blue-bg); color: var(--state-blue-text); } .tag.green { background: var(--state-green-bg); color: var(--state-green-text); }
+.tag.gray { background: var(--state-gray-bg); color: var(--state-gray-text); }
+.tag.gold { background: #F8F1E2; color: #9A7B2E; }
+.card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+.card .card-h { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border-light); }
+.card .card-h h2 { font-size: var(--fs-module); font-weight: 600; }
+.card .card-b { padding: var(--space-5); }
+.sub-note { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(5,1fr); gap: var(--card-gap); }
+.kpi { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); }
+.kpi .kl { font-size: var(--fs-caption); color: var(--text-secondary); } .kpi .kv { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.kpi .kv small { font-size: 12px; } .kpi .kv.plus { color: var(--state-green); } .kpi .kv.minus { color: var(--brand-red); }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table.tb { width: 100%; border-collapse: collapse; font-size: var(--fs-body); }
+table.tb th { text-align: left; background: #FAFBFC; color: var(--text-secondary); font-weight: 600; font-size: var(--fs-caption); padding: 12px 16px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+table.tb td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); white-space: nowrap; }
+table.tb tbody tr:hover { background: var(--bg-page); }
+.mono { font-variant-numeric: tabular-nums; letter-spacing: .3px; }
+.src-tag { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: var(--radius-pill); font-size: 11px; border: 1px solid var(--border-color); }
+.src-tag.ol { background: #E7F0FA; color: var(--state-blue-text); }
+.src-tag.xl { background: #F8F1E2; color: #9A7B2E; }
+.src-tag.jc { background: #FCE9EB; color: var(--state-red-text); }
+.src-tag.zf { background: #E6F4EC; color: var(--state-green-text); }
+.pager { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); font-size: var(--fs-caption); color: var(--text-secondary); }
+.pager .pg-btn { width: 28px; height: 28px; border: 1px solid var(--border-color); background: #fff; border-radius: var(--radius-sm); }
+.pager .pg-btn:hover { background: var(--bg-page); }
+
+/* 状态机通用 */
+.sm-wrap { padding: var(--space-5); }
+.state-machine { display: flex; align-items: flex-start; }
+.sm-node { flex: 1; text-align: center; position: relative; }
+.sm-node .dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; position: relative; z-index: 2; }
+.sm-node .dot.green { background: var(--state-green); } .sm-node .dot.blue { background: var(--brand-blue); } .sm-node .dot.red { background: var(--brand-red); } .sm-node .dot.gray { background: var(--state-gray-dot); }
+.sm-node .nm { font-size: var(--fs-caption); margin-top: 8px; font-weight: 600; } .sm-node .st { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.sm-line { flex: 1; height: 2px; background: var(--border-color); margin-top: 15px; }
+.sm-line.done { background: var(--state-green); } .sm-line.cur { background: var(--brand-blue); } .sm-line.err { background: var(--brand-red); }
+
+/* 考核四步 */
+.steps4 { display: flex; align-items: stretch; gap: 0; }
+.steps4 .s4 { flex: 1; text-align: center; padding: var(--space-4); border: 1px solid var(--border-color); border-right: none; position: relative; }
+.steps4 .s4:last-child { border-right: 1px solid var(--border-color); }
+.steps4 .s4 .num { width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 8px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
+.steps4 .s4.green .num { background: var(--state-green); } .steps4 .s4.blue .num { background: var(--brand-blue); } .steps4 .s4.gray .num { background: var(--state-gray-dot); }
+.steps4 .s4 .t { font-size: var(--fs-body); font-weight: 600; } .steps4 .s4 .d { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 4px; }
+
+/* 预警筛选 */
+.filters { display: flex; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-light); }
+.filters button { height: 28px; padding: 0 14px; border: 1px solid var(--border-color); background: #fff; border-radius: var(--radius-pill); font-size: var(--fs-caption); color: var(--text-secondary); }
+.filters button.active { background: var(--brand-red); color: #fff; border-color: var(--brand-red); }
+
+/* 党风廉政两栏 */
+.disc-layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--card-gap); align-items: start; }
+.sm-actions { display: flex; gap: var(--space-3); margin-top: var(--space-4); flex-wrap: wrap; }
+.sm-alert { margin-top: var(--space-4); border: 1px solid #F3C6CC; background: #FCE9EB; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.sm-alert .at { color: var(--state-red-text); font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.sm-alert .ad { font-size: var(--fs-caption); color: var(--state-red-text); line-height: 1.8; }
+.mask-note { font-size: var(--fs-caption); color: var(--text-secondary); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+
+/* 模态 */
+.modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 400; }
+.modal-mask.open { display: flex; }
+.modal { width: 460px; max-width: calc(100vw - 32px); background: #fff; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+.modal .m-head { padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; }
+.modal .m-head h3 { font-size: var(--fs-module); font-weight: 600; }
+.modal .m-head .mi { width: 30px; height: 30px; border-radius: 50%; background: #FCE9EB; color: var(--brand-red); display: grid; place-items: center; }
+.modal .m-body { padding: var(--space-6); font-size: var(--fs-body); color: var(--text-primary); }
+.modal .m-foot { padding: var(--space-4) var(--space-6); border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: var(--space-3); }
+.modal .warn-box { background: #FCE9EB; border: 1px solid #F3C6CC; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); color: var(--state-red-text); font-size: var(--fs-caption); margin-bottom: var(--space-4); display: flex; gap: 8px; }
+.modal .field { margin-bottom: var(--space-4); }
+.modal .field label { display: block; font-size: var(--fs-caption); color: var(--text-secondary); margin-bottom: 6px; }
+.modal .field label .req { color: var(--brand-red); }
+.modal .field textarea, .modal .field input, .modal .field select { width: 100%; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 8px 12px; font-size: var(--fs-body); font-family: inherit; color: var(--text-primary); }
+.modal .field textarea:focus, .modal .field input:focus, .modal .field select:focus { outline: none; border-color: var(--brand-blue); box-shadow: 0 0 0 3px rgba(45,109,181,0.12); }
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1F2329; color: #fff; padding: 10px 18px; border-radius: var(--radius-md); font-size: var(--fs-body); opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 500; box-shadow: var(--shadow-md); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); } .toast b { color: var(--chart-8); }
+.hidden { display: none !important; }
+.kv-row { display: flex; padding: 9px 0; border-bottom: 1px solid var(--border-light); font-size: var(--fs-body); }
+.kv-row .k { width: 110px; color: var(--text-secondary); flex: none; } .kv-row .v { flex: 1; }
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* 多级导航分组（按 PRD 三·核心业务模块） */
+.nav-group { }
+.nav-group-title { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 var(--space-5); color: rgba(255,255,255,0.95); font-size: var(--fs-body); font-weight: 600; cursor: pointer; position: relative; user-select: none; transition: background .12s ease; }
+.nav-group-title:hover { background: rgba(255,255,255,0.08); }
+.nav-group-title .ng-icon { width: 18px; height: 18px; flex: none; color: #FFD260; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.nav-group-title .ng-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,0.95); }
+.nav-group-title .nav-arrow { flex: none; color: rgba(255,255,255,0.7); font-size: 12px; transition: transform .15s ease; }
+.nav-group.collapsed .nav-arrow { transform: rotate(-90deg); }
+.nav-group.collapsed > .nav-sub { display: none; }
+.nav-group-title.active { color: #fff; background: rgba(255,255,255,0.1); }
+.nav-group-title.active .ng-icon { color: #FFD260; }
+.nav-sub { padding-left: 0; overflow: hidden; }
+.nav-sub .nav-item { height: 36px; font-size: 13px; padding-left: 47px; gap: 8px; display: flex; align-items: center; color: rgba(255,255,255,0.9); position: relative; transition: background .12s ease; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo"><span class="emblem"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5l2.6 5.9 6.4.6-4.9 4.3 1.5 6.3L12 16.9 6.4 19.6 7.9 13.3 3 8.9l6.4-.6L12 2.5z" fill="#fff"/></svg></span><span class="t">党建管理系统<small>Party Building</small></span></div>
+  <nav class="nav">
+                <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)">
+        <svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7M6 10v9h12v-9" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <a class="ng-label" href="01-首页工作台.html" style="color:inherit;flex:1">首页</a>
+        <span class="nav-arrow" onclick="event.stopPropagation();toggleNavGroup(this.closest('.nav-group'))">▾</span>
+      </div>
+      <div class="nav-sub">
+        <a class="nav-item" href="01-首页工作台.html" onclick="navLeaf(this)">工作台</a>
+        <a class="nav-item" href="05-党委数据驾驶舱.html" onclick="navLeaf(this)">党委数据驾驶舱</a>
+        <a class="nav-item" href="07-审批管理.html" onclick="navLeaf(this)">审批管理</a>
+      </div>
+    </div>
+    
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="2"/><path d="M3.5 19a5.5 5.5 0 0111 0M16 6.5a3 3 0 010 5.8M21 19a5 0 00-4-4.9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织架构管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="02-组织与党员.html" onclick="navLeaf(this)">党组织信息管理</a>
+        <a class="nav-item" href="06-换届选举管理.html" onclick="navLeaf(this)">换届选举管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" stroke="currentColor" stroke-width="2"/><path d="M5 20a7 7 0 0114 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">党员全生命周期管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="08-党员全生命周期.html" onclick="navLeaf(this)">党员全生命周期总览</a>
+        <a class="nav-item" href="09-党员电子档案管理.html" onclick="navLeaf(this)">党员电子档案管理</a>
+        <a class="nav-item" href="03-发展党员.html" onclick="navLeaf(this)">发展党员全流程管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#transfer" onclick="navLeaf(this)">组织关系转接管理</a>
+        <a class="nav-item" href="08-党员全生命周期.html#movable" onclick="navLeaf(this)">流动党员与党籍异动管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">组织生活管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="10-组织生活管理.html#three" onclick="navLeaf(this)">"三会一课"管理</a>
+        <a class="nav-item" href="10-组织生活管理.html#theme" onclick="navLeaf(this)">主题党日与组织生活会</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h7v14H4zM13 5h7v14h-7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">学习教育</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="11-学习教育管理.html#resource" onclick="navLeaf(this)">学习资源库与任务管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#hour" onclick="navLeaf(this)">学时与考试管理</a>
+        <a class="nav-item" href="11-学习教育管理.html#heart" onclick="navLeaf(this)">心得体会管理</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M7 7h10a3 3 0 010 6H7a3 3 0 000 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ng-label">党费管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="12-党费管理.html#calc" onclick="navLeaf(this)">党费核算与收缴</a>
+        <a class="nav-item" href="12-党费管理.html#use" onclick="navLeaf(this)">党费使用、公示与对账</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M4 5h16v14H4zM8 9h8M8 13h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">宣传与思想阵地</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="13-宣传与思想阵地.html#portal" onclick="navLeaf(this)">党建资讯门户</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#honor" onclick="navLeaf(this)">党建风采展示</a>
+        <a class="nav-item" href="13-宣传与思想阵地.html#red" onclick="navLeaf(this)">红色教育资源</a>
+      </div>
+    </div>
+    <div class="nav-group active">
+      <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item active" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M13 3L4 14h7l-1 7 9-11h-7l1-7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="ng-label">特色业务</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="14-特色业务.html#report" onclick="navLeaf(this)">双报到双服务</a>
+        <a class="nav-item" href="14-特色业务.html#vol" onclick="navLeaf(this)">志愿服务</a>
+        <a class="nav-item" href="14-特色业务.html#fact" onclick="navLeaf(this)">我为群众办实事</a>
+        <a class="nav-item" href="14-特色业务.html#fusion" onclick="navLeaf(this)">党建+业务融合</a>
+        <a class="nav-item" href="14-特色业务.html#brand" onclick="navLeaf(this)">党建品牌创建</a>
+      </div>
+    </div>
+    <div class="nav-group collapsed">
+      <div class="nav-group-title" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="ng-label">系统管理</span><span class="nav-arrow">▾</span></div>
+      <div class="nav-sub">
+        <a class="nav-item" href="15-系统管理.html#role" onclick="navLeaf(this)">权限与角色管理</a>
+        <a class="nav-item" href="15-系统管理.html#msg" onclick="navLeaf(this)">消息中心</a>
+        <a class="nav-item" href="15-系统管理.html#export" onclick="navLeaf(this)">台账导出引擎</a>
+        <a class="nav-item" href="15-系统管理.html#config" onclick="navLeaf(this)">系统配置</a>
+        <a class="nav-item" href="15-系统管理.html#cert" onclick="navLeaf(this)">党员证明开具</a>
+      </div>
+    </div>
+    
+  </nav>
+  <div class="nav-deco" aria-hidden="true"></div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="crumb">监督考核 <span style="color:var(--text-secondary)">/</span> <b id="crumbSub">党员积分</b></div>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input type="text" placeholder="搜索党员、预警、信访…"></div>
+    <div class="top-actions">
+      <button class="org-sel"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>中共XX集团委员会</button>
+      <button class="icon-btn" title="消息" onclick="showToast('消息中心（演示）')"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h14v10H5zM5 7l7 5 7-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="dot">3</span></button>
+      <button class="icon-btn" title="帮助" onclick="showToast('已打开帮助中心（演示）')"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 113.5 2.3c-.8.4-1 .9-1 1.7M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <div class="user"><span class="avatar">王</span><div><div class="nm">王*（党委管理员）<span class="role-chip">党委</span></div><div class="role">监督考核视图</div></div></div>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="page-head">
+      <div><h1>监督考核</h1><div class="sub">模块 4.6 · 积分透明可追溯 · 考核闭环 · 风险预警聚合 · 党风廉政闭环</div></div>
+      <div class="subtabs" id="subtabs">
+        <button id="t-score" class="active" onclick="switchSub('score')">党员积分</button>
+        <button id="t-assess" onclick="switchSub('assess')">支部考核</button>
+        <button id="t-warn" onclick="switchSub('warn')">预警清单</button>
+        <button id="t-disc" onclick="switchSub('disc')">党风廉政</button>
+      </div>
+    </div>
+
+    <!-- ===== 党员积分 · 一级：人员积分台账 ===== -->
+    <div id="view-score">
+      <div class="kpis">
+        <div class="kpi"><div class="kl">在册党员</div><div class="kv" id="kpiCount">0</div></div>
+        <div class="kpi"><div class="kl">平均积分</div><div class="kv" id="kpiAvg">0</div></div>
+        <div class="kpi"><div class="kl">达标率</div><div class="kv" id="kpiRate">0%</div></div>
+        <div class="kpi"><div class="kl">积分预警</div><div class="kv minus" id="kpiWarn">0</div></div>
+      </div>
+      <div class="card" style="margin-top:var(--card-gap)">
+        <div class="card-h"><h2>人员积分台账 <span class="sub-note">超管 / 党委 / 支部管理员视图 · 点击「查看明细」下钻个人积分变更</span></h2>
+          <div class="filters" style="margin-left:auto">
+            <select id="scOrg" onchange="renderScoreLedger()"><option value="">全部党组织</option></select>
+            <select id="scStatus" onchange="renderScoreLedger()">
+              <option value="">全部状态</option><option value="达标">达标</option><option value="正常">正常</option><option value="预警">预警 / 后进</option>
+            </select>
+            <input id="scName" placeholder="姓名搜索" style="width:140px" oninput="renderScoreLedger()">
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="table-wrap">
+            <table class="tb">
+              <thead><tr><th>姓名</th><th>党组织</th><th>当前积分</th><th>基础分</th><th>加分</th><th>扣分</th><th>支部排名</th><th>状态</th><th style="text-align:right">操作</th></tr></thead>
+              <tbody id="scoreLedger"></tbody>
+            </table>
+          </div>
+          <div class="sub-note" style="margin-top:10px">台账由「积分变更明细」自动聚合：当前积分 = 基础分 + Σ加分 − Σ扣分；排名按当前积分降序；积分 &lt; 70 触发预警。普通党员视图将收敛为本人一行。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 党员积分 · 二级：个人积分详情（独立整页） ===== -->
+    <div id="view-score-detail" class="hidden">
+      <div class="card">
+        <div class="card-h">
+          <h2 id="scoreDetailTitle">个人积分详情</h2>
+          <span class="sub-note">变更记录不可编辑 · 每行关联来源业务单据</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="backToLedger()">← 返回积分台账</button>
+        </div>
+        <div class="card-b">
+          <div class="kpis" id="scoreDetailKpi"></div>
+          <div class="card" style="margin-top:var(--card-gap)">
+            <div class="card-h"><h2>积分变更明细 <span class="sub-note" id="scoreLogCount"></span></h2><button class="btn btn-primary btn-sm" onclick="openAppeal()">发起申诉</button></div>
+            <div class="table-wrap">
+              <table class="tb">
+                <thead><tr><th>时间</th><th>来源业务</th><th>事项</th><th>分值</th><th>来源单据ID</th><th>操作</th></tr></thead>
+                <tbody id="scoreRows"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card" style="margin-top:var(--card-gap)">
+            <div class="card-h"><h2>积分申诉状态机 <span class="sub-note" id="appealNote"></span></h2></div>
+            <div class="card-b" id="appealSM"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 支部考核 ===== -->
+    <div id="view-assess" class="hidden">
+      <div class="card">
+        <div class="card-h"><h2>支部考核流程 <span class="sub-note">自评 → 上级考评 → 结果反馈 → 整改销号</span></h2><span class="sub-note">考核周期：2026 Q1</span></div>
+        <div class="card-b">
+          <div class="steps4">
+            <div class="s4 green"><div class="num">1</div><div class="t">自评</div><div class="d">第二党支部 已提交</div></div>
+            <div class="s4 blue"><div class="num">2</div><div class="t">上级考评</div><div class="d">党委考评中</div></div>
+            <div class="s4 gray"><div class="num">3</div><div class="t">结果反馈</div><div class="d">待开始</div></div>
+            <div class="s4 gray"><div class="num">4</div><div class="t">整改销号</div><div class="d">待开始</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:var(--card-gap)">
+        <div class="card-h"><h2>考核问题清单 <span class="sub-note">设责任人与整改期限</span></h2></div>
+        <div class="table-wrap">
+          <table class="tb">
+            <thead><tr><th>问题</th><th>责任组织</th><th>责任人</th><th>整改期限</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr><td>组织生活频次不足（缺 1 次支委会）</td><td>第三党支部</td><td>刘*</td><td class="mono">2026-03-31</td><td><span class="tag orange">整改中</span></td><td><span class="btn-ghost" onclick="showToast('查看整改详情（演示）')">详情</span></td></tr>
+              <tr><td>党费收缴率低于 90%</td><td>第四党支部</td><td>陈*</td><td class="mono">2026-03-28</td><td><span class="tag orange">整改中</span></td><td><span class="btn-ghost" onclick="showToast('查看整改详情（演示）')">详情</span></td></tr>
+              <tr><td>学时未完成（差 4 学时）</td><td>第二党支部</td><td>张*</td><td class="mono">2026-04-05</td><td><span class="tag blue">待跟进</span></td><td><span class="btn-ghost" onclick="showToast('查看整改详情（演示）')">详情</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 预警清单 ===== -->
+    <div id="view-warn" class="hidden">
+      <div class="card">
+        <div class="card-h"><h2>预警清单 <span class="sub-note">换届/党费/学时/组织生活/发展党员/信访 统一聚合</span></h2><span class="sub-note">按风险等级 + 责任组织处理</span></div>
+        <div class="filters" id="warnFilter">
+          <button class="active" data-f="all" onclick="warnFilterClick(this,'all')">全部</button>
+          <button data-f="red" onclick="warnFilterClick(this,'red')">红色</button>
+          <button data-f="orange" onclick="warnFilterClick(this,'orange')">橙色</button>
+          <button data-f="blue" onclick="warnFilterClick(this,'blue')">蓝色</button>
+        </div>
+        <div class="table-wrap"><table class="tb"><thead><tr><th>等级</th><th>类型</th><th>责任组织</th><th>原因</th><th>状态</th><th>操作</th></tr></thead><tbody id="warnRows"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ===== 党风廉政 ===== -->
+    <div id="view-disc" class="hidden">
+      <div class="disc-layout">
+        <div class="card">
+          <div class="card-h"><h2>信访举报受理闭环</h2><span class="sub-note">举报人信息脱敏</span></div>
+          <div class="card-b">
+            <div class="filters" id="xfFilter">
+              <button class="active" data-f="all" onclick="xfFilterClick(this,'all')">全部</button>
+              <button data-f="处理中" onclick="xfFilterClick(this,'处理中')">处理中</button>
+              <button data-f="风险" onclick="xfFilterClick(this,'风险')">风险</button>
+              <button data-f="了结" onclick="xfFilterClick(this,'了结')">了结</button>
+            </div>
+            <div id="xfList"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>党纪处分工作流</h2><span class="sub-note">5 级处分分级审批 + 执行归档</span></div>
+          <div class="card-b" id="punishBody"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 申诉模态 -->
+<div class="modal-mask" id="modalAppeal">
+  <div class="modal">
+    <div class="m-head"><span class="mi"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span><h3>发起积分申诉</h3></div>
+    <div class="m-body">
+      <div class="field"><label>申诉事项 <span class="req">*</span></label><select><option>志愿服务时长未计入</option><option>组织生活签到遗漏</option><option>奖惩扣分异议</option></select></div>
+      <div class="field"><label>申诉说明 <span class="req">*</span></label><textarea rows="3" placeholder="请说明异议内容与依据…"></textarea></div>
+      <div class="field"><label>关联积分记录</label><input value="ZF-2026-012 志愿服务 +5（未计）" readonly></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-secondary" onclick="closeModal('modalAppeal')">取消</button><button class="btn btn-primary" onclick="closeModal('modalAppeal');showToast('申诉已发起，状态：<b>待审核</b>（演示）')">提交申诉</button></div>
+  </div>
+</div>
+
+<!-- 通用确认/溯源模态 -->
+<div class="modal-mask" id="modalConfirm">
+  <div class="modal">
+    <div class="m-head"><span class="mi"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3 id="mcTitle">确认</h3></div>
+    <div class="m-body">
+      <div class="warn-box" id="mcWarnBox" style="display:none"><svg viewBox="0 0 24 24" fill="none" width="15" height="15"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div id="mcWarn"></div></div>
+      <div id="mcBody"></div>
+    </div>
+    <div class="m-foot"><button class="btn btn-secondary" onclick="closeModal('modalConfirm')">取消</button><button class="btn btn-primary" id="mcOk" onclick="mcOk()">确认</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* 通用 */
+function showToast(msg){ const t=document.getElementById('toast'); t.innerHTML=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e=>{ if(e.target.classList.contains('modal-mask')) e.target.classList.remove('open'); });
+function switchSub(v){
+  ['score','assess','warn','disc'].forEach(s=>{
+    document.getElementById('t-'+s).classList.toggle('active', s===v);
+    document.getElementById('view-'+s).classList.toggle('hidden', s!==v);
+  });
+  document.getElementById('view-score-detail').classList.add('hidden');
+  document.getElementById('subtabs').style.display='';
+  const names={score:'党员积分',assess:'支部考核',warn:'预警清单',disc:'党风廉政'};
+  document.getElementById('crumbSub').textContent=names[v];
+}
+
+/* 积分数据模型：人员 + 变更明细 两级 */
+var SCORE_MEMBERS=[
+ {id:'M001', name:'张*', org:'第二党支部', base:60},
+ {id:'M002', name:'李*', org:'第二党支部', base:60},
+ {id:'M003', name:'王*', org:'机关支部', base:60},
+ {id:'M004', name:'赵*', org:'第二党支部', base:60, appeal:'SS-2026-007 志愿服务时长未计入'},
+ {id:'M005', name:'陈*', org:'生产党支部', base:60},
+ {id:'M006', name:'刘*', org:'离退休党支部', base:60},
+ {id:'M007', name:'孙*', org:'生产党支部', base:60},
+ {id:'M008', name:'周*', org:'机关支部', base:60}
+];
+var SCORE_LOGS=[
+ {member_id:'M001', t:'2026-03-12', src:'ol', srcn:'组织生活', item:'参加主题党日', v:'+2', id:'OL-2026-031'},
+ {member_id:'M001', t:'2026-03-10', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+3', id:'XL-2026-088'},
+ {member_id:'M001', t:'2026-03-08', src:'jc', srcn:'奖惩', item:'组织生活迟到', v:'-6', id:'JC-2026-005'},
+ {member_id:'M001', t:'2026-03-05', src:'zf', srcn:'志愿服务', item:'社区志愿服务 4h', v:'+5', id:'ZF-2026-012'},
+ {member_id:'M001', t:'2026-02-26', src:'ol', srcn:'组织生活', item:'支委会参会', v:'+2', id:'OL-2026-028'},
+ {member_id:'M001', t:'2026-02-20', src:'xl', srcn:'学习教育', item:'专题党课', v:'+2', id:'XL-2026-074'},
+ {member_id:'M001', t:'2026-02-15', src:'zf', srcn:'志愿服务', item:'结对帮扶', v:'+3', id:'ZF-2026-009'},
+ {member_id:'M001', t:'2026-02-10', src:'ol', srcn:'组织生活', item:'党员大会', v:'+2', id:'OL-2026-021'},
+ {member_id:'M002', t:'2026-03-11', src:'ol', srcn:'组织生活', item:'参加主题党日', v:'+3', id:'OL-2026-032'},
+ {member_id:'M002', t:'2026-03-09', src:'zf', srcn:'志愿服务', item:'社区志愿服务 6h', v:'+5', id:'ZF-2026-013'},
+ {member_id:'M002', t:'2026-03-02', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+4', id:'XL-2026-089'},
+ {member_id:'M002', t:'2026-02-22', src:'ol', srcn:'组织生活', item:'支委会参会', v:'+5', id:'OL-2026-029'},
+ {member_id:'M002', t:'2026-02-14', src:'jc', srcn:'奖惩', item:'党费缴纳及时', v:'+3', id:'JC-2026-006'},
+ {member_id:'M002', t:'2026-02-08', src:'xl', srcn:'学习教育', item:'专题党课', v:'+3', id:'XL-2026-075'},
+ {member_id:'M003', t:'2026-03-12', src:'zf', srcn:'志愿服务', item:'结对帮扶', v:'+5', id:'ZF-2026-014'},
+ {member_id:'M003', t:'2026-03-10', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+5', id:'XL-2026-090'},
+ {member_id:'M003', t:'2026-03-05', src:'ol', srcn:'组织生活', item:'党员大会', v:'+5', id:'OL-2026-030'},
+ {member_id:'M003', t:'2026-02-25', src:'ol', srcn:'组织生活', item:'支委会参会', v:'+4', id:'OL-2026-027'},
+ {member_id:'M003', t:'2026-02-18', src:'zf', srcn:'志愿服务', item:'社区志愿服务 5h', v:'+3', id:'ZF-2026-010'},
+ {member_id:'M003', t:'2026-02-10', src:'xl', srcn:'学习教育', item:'专题党课', v:'+3', id:'XL-2026-076'},
+ {member_id:'M004', t:'2026-03-09', src:'ol', srcn:'组织生活', item:'参加主题党日', v:'+2', id:'OL-2026-033'},
+ {member_id:'M004', t:'2026-03-01', src:'xl', srcn:'学习教育', item:'专题党课', v:'+1', id:'XL-2026-091'},
+ {member_id:'M005', t:'2026-03-11', src:'zf', srcn:'志愿服务', item:'社区志愿服务 4h', v:'+4', id:'ZF-2026-015'},
+ {member_id:'M005', t:'2026-03-04', src:'ol', srcn:'组织生活', item:'支委会参会', v:'+3', id:'OL-2026-026'},
+ {member_id:'M005', t:'2026-02-20', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+2', id:'XL-2026-092'},
+ {member_id:'M005', t:'2026-02-12', src:'zf', srcn:'志愿服务', item:'结对帮扶', v:'+5', id:'ZF-2026-011'},
+ {member_id:'M006', t:'2026-03-08', src:'ol', srcn:'组织生活', item:'党员大会', v:'+1', id:'OL-2026-024'},
+ {member_id:'M006', t:'2026-02-16', src:'zf', srcn:'志愿服务', item:'关爱帮扶', v:'+1', id:'ZF-2026-008'},
+ {member_id:'M007', t:'2026-03-12', src:'zf', srcn:'志愿服务', item:'社区志愿服务 5h', v:'+5', id:'ZF-2026-016'},
+ {member_id:'M007', t:'2026-03-06', src:'ol', srcn:'组织生活', item:'参加主题党日', v:'+5', id:'OL-2026-025'},
+ {member_id:'M007', t:'2026-02-22', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+4', id:'XL-2026-093'},
+ {member_id:'M007', t:'2026-02-09', src:'zf', srcn:'志愿服务', item:'结对帮扶', v:'+3', id:'ZF-2026-012b'},
+ {member_id:'M008', t:'2026-03-10', src:'xl', srcn:'学习教育', item:'完成季度学习任务', v:'+3', id:'XL-2026-094'},
+ {member_id:'M008', t:'2026-03-03', src:'zf', srcn:'志愿服务', item:'社区志愿服务 4h', v:'+4', id:'ZF-2026-017'},
+ {member_id:'M008', t:'2026-02-19', src:'ol', srcn:'组织生活', item:'支委会参会', v:'+2', id:'OL-2026-023'},
+ {member_id:'M008', t:'2026-02-10', src:'xl', srcn:'学习教育', item:'专题党课', v:'+5', id:'XL-2026-077'}
+];
+var curScoreMember=null;
+function scoreStatus(cur){ if(cur>=80) return '达标'; if(cur<70) return '预警'; return '正常'; }
+function scoreAgg(){
+  return SCORE_MEMBERS.map(function(m){
+    var logs=SCORE_LOGS.filter(function(l){ return l.member_id===m.id; });
+    var add=0, minus=0;
+    logs.forEach(function(l){ var n=parseInt(l.v,10); if(n>=0) add+=n; else minus+=(-n); });
+    var cur=m.base+add-minus;
+    return { id:m.id, name:m.name, org:m.org, base:m.base, add:add, minus:minus, cur:cur, appeal:m.appeal||'', status:scoreStatus(cur) };
+  });
+}
+function buildLedger(){
+  var arr=scoreAgg().sort(function(a,b){ return b.cur-a.cur; });
+  arr.forEach(function(r,i){ r.rank=i+1; });
+  return arr;
+}
+function renderScoreLedger(){
+  var led=buildLedger();
+  var avg=Math.round(led.reduce(function(s,r){ return s+r.cur; },0)/led.length*10)/10;
+  var pass=led.filter(function(r){ return r.status==='达标'; }).length;
+  var warnN=led.filter(function(r){ return r.status==='预警'; }).length;
+  document.getElementById('kpiCount').textContent=led.length;
+  document.getElementById('kpiAvg').textContent=avg;
+  document.getElementById('kpiRate').textContent=Math.round(pass/led.length*100)+'%';
+  document.getElementById('kpiWarn').textContent=warnN;
+  var orgSel=document.getElementById('scOrg');
+  if(orgSel.options.length<=1){
+    SCORE_MEMBERS.map(function(m){ return m.org; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).forEach(function(o){
+      var op=document.createElement('option'); op.value=o; op.textContent=o; orgSel.appendChild(op);
+    });
+  }
+  var org=orgSel.value, st=document.getElementById('scStatus').value, nm=(document.getElementById('scName').value||'').trim();
+  var rows=led.filter(function(r){ return (org===''||r.org===org) && (st===''||r.status===st) && (nm===''||r.name.indexOf(nm)>-1); });
+  var tb=document.getElementById('scoreLedger');
+  if(rows.length===0){ tb.innerHTML='<tr><td colspan="9"><div class="empty">无匹配党员</div></td></tr>'; return; }
+  var stTag=function(s){ return s==='达标'?'<span class="tag green">达标</span>':(s==='预警'?'<span class="tag red">预警</span>':'<span class="tag blue">正常</span>'); };
+  tb.innerHTML=rows.map(function(r){
+    return '<tr><td><div class="name-cell"><span class="av">'+r.name.charAt(0)+'</span>'+r.name+'</div></td>'+
+      '<td>'+r.org+'</td>'+
+      '<td class="mono">'+r.cur+'</td>'+
+      '<td class="mono">'+r.base+'</td>'+
+      '<td class="mono" style="color:var(--state-green)">+'+r.add+'</td>'+
+      '<td class="mono" style="color:var(--brand-red)">-'+r.minus+'</td>'+
+      '<td class="mono">'+r.rank+'</td>'+
+      '<td>'+stTag(r.status)+'</td>'+
+      '<td style="text-align:right"><button class="btn btn-sm btn-primary" onclick="openScoreDetail(\''+r.id+'\')">查看明细</button></td></tr>';
+  }).join('');
+}
+
+/* 个人积分详情（二级页） */
+function openScoreDetail(memberId){
+  var led=buildLedger().find(function(r){ return r.id===memberId; });
+  if(!led) return;
+  curScoreMember=led;
+  document.getElementById('scoreDetailTitle').textContent=led.name+'（'+led.org+'）· 积分详情';
+  var total=buildLedger().length;
+  document.getElementById('scoreDetailKpi').innerHTML=
+    '<div class="kpi"><div class="kl">当前积分</div><div class="kv">'+led.cur+'</div></div>'+
+    '<div class="kpi"><div class="kl">支部排名</div><div class="kv">'+led.rank+'<small> / '+total+'</small></div></div>'+
+    '<div class="kpi"><div class="kl">基础分</div><div class="kv">'+led.base+'</div></div>'+
+    '<div class="kpi"><div class="kl">加分</div><div class="kv plus">+'+led.add+'</div></div>'+
+    '<div class="kpi"><div class="kl">扣分</div><div class="kv minus">-'+led.minus+'</div></div>';
+  renderScoreDetail();
+  ['score','assess','warn','disc'].forEach(function(s){ document.getElementById('view-'+s).classList.add('hidden'); });
+  document.getElementById('view-score-detail').classList.remove('hidden');
+  document.getElementById('subtabs').style.display='none';
+  document.getElementById('crumbSub').textContent='党员积分 / 详情';
+}
+function backToLedger(){
+  document.getElementById('view-score-detail').classList.add('hidden');
+  document.getElementById('view-score').classList.remove('hidden');
+  document.getElementById('subtabs').style.display='';
+  document.getElementById('crumbSub').textContent='党员积分';
+}
+function renderScoreDetail(){
+  if(!curScoreMember) return;
+  var logs=SCORE_LOGS.filter(function(l){ return l.member_id===curScoreMember.id; });
+  document.getElementById('scoreLogCount').textContent='共 '+logs.length+' 条 · 关联来源业务单据';
+  document.getElementById('scoreRows').innerHTML=logs.map(function(s){
+    return '<tr><td class="mono">'+s.t+'</td>'+
+      '<td><span class="src-tag '+s.src+'">'+s.srcn+'</span></td>'+
+      '<td>'+s.item+'</td>'+
+      '<td class="mono" style="color:'+(s.v[0]==='+'?'var(--state-green)':'var(--brand-red)')+'">'+s.v+'</td>'+
+      '<td class="mono">'+s.id+'</td>'+
+      '<td><span class="btn-ghost" onclick="trace(\''+s.id+'\',\''+s.srcn+'\',\''+s.item+'\')">溯源</span> <span class="btn-ghost" onclick="openAppeal()">申诉</span></td></tr>';
+  }).join('');
+  document.getElementById('appealNote').textContent = curScoreMember.appeal ? ('当前申诉：'+curScoreMember.appeal) : '暂无进行中申诉';
+  renderAppeal();
+}
+
+/* 溯源 */
+function trace(id, src, item){
+  document.getElementById('mcTitle').textContent='积分溯源 · '+id;
+  document.getElementById('mcWarnBox').style.display='none';
+  var who = curScoreMember ? (curScoreMember.name+' · '+curScoreMember.org) : '张* · 第二党支部';
+  document.getElementById('mcBody').innerHTML=
+    '<div class="kv-row"><span class="k">来源业务</span><span class="v">'+src+'</span></div>'+
+    '<div class="kv-row"><span class="k">事项</span><span class="v">'+item+'</span></div>'+
+    '<div class="kv-row"><span class="k">单据ID</span><span class="v mono">'+id+'</span></div>'+
+    '<div class="kv-row"><span class="k">关联对象</span><span class="v">'+who+'</span></div>'+
+    '<div class="kv-row"><span class="k">经办/时间</span><span class="v">支部管理员 王* · 2026-03</span></div>'+
+    '<div style="margin-top:12px"><button class="btn btn-secondary" onclick="showToast(\'下钻至业务单据 '+id+'（演示）\')">下钻业务单据</button></div>';
+  document.getElementById('mcOk').textContent='关闭'; window._mcOk=closeModalC;
+  openModal('modalConfirm');
+}
+function closeModalC(){ closeModal('modalConfirm'); }
+
+/* 申诉状态机 */
+function renderAppeal(){
+  const nodes=[['发起','已完成'],['待审核','处理中'],['通过 / 驳回','待定'],['完成','待定']];
+  const cls=['green','blue','gray','gray'];
+  let html='<div class="state-machine">';
+  nodes.forEach((n,i)=>{
+    html+='<div class="sm-node"><div class="dot '+cls[i]+'">'+(i===0?'✓':(i+1))+'</div><div class="nm">'+n[0]+'</div><div class="st">'+n[1]+'</div></div>';
+    if(i<nodes.length-1) html+='<div class="sm-line cur"></div>';
+  });
+  html+='</div>';
+  html+='<div class="sm-actions"><button class="btn btn-primary" onclick="appealPass()">审核通过</button><button class="btn btn-secondary" onclick="appealReject()">驳回（填因）</button></div>';
+  html+='<div class="mask-note"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>驳回须填写原因，申诉人可发起二次复核。</div>';
+  document.getElementById('appealSM').innerHTML=html;
+}
+function appealPass(){ showToast('申诉<bn>通过</bn>，积分已修正（演示）'); document.getElementById('appealSM').querySelectorAll('.sm-node')[2].querySelector('.dot').className='dot green'; document.getElementById('appealSM').querySelectorAll('.sm-node')[2].querySelector('.st').textContent='通过'; }
+function appealReject(){
+  document.getElementById('mcTitle').textContent='驳回申诉 · 填写原因';
+  document.getElementById('mcWarnBox').style.display='flex';
+  document.getElementById('mcWarn').textContent='驳回后将通知申诉人，并可发起二次复核。';
+  document.getElementById('mcBody').innerHTML='<div class="field"><label>驳回原因 <span class="req">*</span></label><textarea rows="2" placeholder="请填写驳回理由…"></textarea></div>';
+  document.getElementById('mcOk').textContent='确认驳回';
+  window._mcOk=()=>{ closeModal('modalConfirm'); showToast('申诉已<b>驳回</b>，申诉人可二次复核（演示）'); const ns=document.getElementById('appealSM').querySelectorAll('.sm-node'); ns[2].querySelector('.dot').className='dot red'; ns[2].querySelector('.st').textContent='驳回'; };
+  openModal('modalConfirm');
+}
+function openAppeal(){
+  var rec = curScoreMember ? ('关联：'+curScoreMember.name+'（'+curScoreMember.org+'）当前积分 '+curScoreMember.cur) : 'ZF-2026-012 志愿服务 +5（未计）';
+  var inp=document.querySelector('#modalAppeal .field input[readonly]');
+  if(inp) inp.value=rec;
+  openModal('modalAppeal');
+}
+
+/* 预警清单 */
+const warns=[
+ {lv:'red', type:'发展党员', org:'第二党支部', reason:'节点14 确定发展对象公示超期未完成', st:'待处置'},
+ {lv:'red', type:'信访超期', org:'纪委', reason:'信访 XF-2026-011 超 30 日未处置', st:'待处置'},
+ {lv:'orange', type:'换届', org:'第五党支部', reason:'本届支委任期剩 21 天未启动', st:'待提醒'},
+ {lv:'orange', type:'党费', org:'第四党支部', reason:'连续 2 个月欠缴（3 人）', st:'催办中'},
+ {lv:'orange', type:'学时', org:'第二党支部', reason:'2 名党员学时不足', st:'待跟进'},
+ {lv:'blue', type:'组织生活', org:'第三党支部', reason:'频次临界（缺 1 次支委会）', st:'观察中'},
+ {lv:'blue', type:'转接异常', org:'第三党支部', reason:'跨省转接对接超时', st:'处理中'}
+];
+function warnTag(lv){ const m={red:['red','红色'],orange:['orange','橙色'],blue:['blue','蓝色']}; return '<span class="tag '+m[lv][0]+'">'+m[lv][1]+'</span>'; }
+function renderWarns(f){
+  const data=f==='all'?warns:warns.filter(w=>w.lv===f);
+  document.getElementById('warnRows').innerHTML=data.map(w=>(
+    '<tr><td>'+warnTag(w.lv)+'</td><td>'+w.type+'</td><td>'+w.org+'</td><td>'+w.reason+'</td><td><span class="tag '+(w.lv==='red'?'red':w.lv==='orange'?'orange':'blue')+'">'+w.st+'</span></td><td><span class="btn-ghost" onclick="showToast(\'处置：'+w.type+'（演示）\')">处置</span></td></tr>'
+  )).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:24px">无匹配预警</td></tr>';
+}
+function warnFilterClick(btn,f){ document.querySelectorAll('#warnFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderWarns(f); }
+
+/* 党风廉政 · 信访 */
+const xfs=[
+ {id:'XF-2026-014', type:'作风问题', reporter:'匿名', status:'处理中', stcls:'blue', cur:'初核', reason:'反映某支部组织生活不规范'},
+ {id:'XF-2026-011', type:'违纪线索', reporter:'王**（脱敏）', status:'风险', stcls:'red', cur:'立案', reason:'反映党员干部疑似违规，初核发现风险'},
+ {id:'XF-2026-008', type:'工作作风', reporter:'李**（脱敏）', status:'了结', stcls:'green', cur:'了结', reason:'反映情况部分属实，已谈话提醒并了结'}
+];
+const XF_NODES=['登记','分办','初核','立案/了结','反馈'];
+function xfStates(status){ return status==='了结'?['green','green','green','green','green']:status==='风险'?['green','green','green','red','gray']:['green','green','blue','gray','gray']; }
+function renderXf(f){
+  const data=f==='all'?xfs:xfs.filter(x=>x.status===f);
+  document.getElementById('xfList').innerHTML=data.map(x=>(
+    '<div style="padding:12px 0;border-bottom:1px solid var(--border-light)"><div style="display:flex;align-items:center;gap:8px"><b>'+x.id+'</b><span class="tag '+x.stcls+'">'+x.status+'</span><span class="sub-note">当前：'+x.cur+'</span></div>'+
+    '<div class="sub-note" style="margin:4px 0">类型：'+x.type+' · 举报人：'+x.reporter+'（脱敏）</div>'+
+    '<div class="sub-note">'+x.reason+'</div>'+
+    '<div style="margin-top:8px"><span class="btn-ghost" onclick="xfDetail(\''+x.id+'\')">查看受理闭环</span></div></div>'
+  )).join('') || '<div style="padding:24px;text-align:center;color:var(--text-secondary)">无匹配</div>';
+}
+function xfFilterClick(btn,f){ document.querySelectorAll('#xfFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderXf(f); }
+function xfDetail(id){
+  const x=xfs.find(y=>y.id===id); const st=xfStates(x.status);
+  let html='<div class="sm-wrap" style="padding:0"><div class="state-machine">';
+  XF_NODES.forEach((nm,i)=>{ html+='<div class="sm-node"><div class="dot '+st[i]+'">'+(st[i]==='green'?'✓':(i+1))+'</div><div class="nm">'+nm+'</div></div>'; if(i<XF_NODES.length-1) html+='<div class="sm-line '+(st[i]==='green'&&st[i+1]!=='gray'?'done':st[i+1]==='red'?'err':st[i+1]==='blue'?'cur':'')+'"></div>'; });
+  html+='</div>';
+  if(x.status==='风险') html+='<div class="sm-alert"><div class="at"><svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>红色风险：须处置</div><div class="ad">'+x.reason+'<br>处置：立案审查，限时办结并反馈举报人。</div><div class="sm-actions"><button class="btn btn-primary" onclick="showToast(\'已立案（演示）\')">立案</button><button class="btn btn-secondary" onclick="showToast(\'已反馈举报人（演示）\')">反馈</button></div></div>';
+  html+='<div class="mask-note"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>举报人信息仅受理角色可见，已脱敏。</div></div>';
+  openCenter(html);
+}
+function openCenter(html){ document.getElementById('mcTitle').textContent='信访受理闭环'; document.getElementById('mcWarnBox').style.display='none'; document.getElementById('mcBody').innerHTML=html; document.getElementById('mcOk').textContent='关闭'; window._mcOk=closeModalC; openModal('modalConfirm'); }
+
+/* 党风廉政 · 党纪处分工作流 */
+const levels=['警告','严重警告','撤销党内职务','留党察看','开除党籍'];
+const punish=[
+ {name:'刘*', level:'警告', org:'第四党支部', approve:'支部→总支', st:'执行中', cls:'orange'},
+ {name:'陈*', level:'严重警告', org:'第三党支部', approve:'支部→总支→党委', st:'待党委审批', cls:'blue'},
+ {name:'—', level:'留党察看', org:'—', approve:'须党委审批', st:'未触发', cls:'gray'}
+];
+function renderPunish(){
+  let html='<div class="sub-note" style="margin-bottom:8px">处分分级（越重审批层级越高）</div>';
+  html+='<table class="tb"><thead><tr><th>处分等级</th><th>审批层级</th><th>状态</th></tr></thead><tbody>';
+  levels.forEach((l,i)=>{ html+='<tr><td>'+l+'</td><td>'+(i<2?'支部/总支':i<4?'党委':'党委（须报上级）')+'</td><td>'+(i<3?'<span class="tag green">启用</span>':'<span class="tag gray">—</span>')+'</td></tr>'; });
+  html+='</tbody></table>';
+  html+='<div class="sub-note" style="margin:16px 0 8px">在办处分流程</div>';
+  html+='<table class="tb"><thead><tr><th>被处分人</th><th>处分</th><th>责任组织</th><th>审批</th><th>状态</th></tr></thead><tbody>';
+  punish.forEach(p=>{ html+='<tr><td>'+p.name+'</td><td>'+p.level+'</td><td>'+p.org+'</td><td class="mono">'+p.approve+'</td><td><span class="tag '+p.cls+'">'+p.st+'</span></td></tr>'; });
+  html+='</tbody></table>';
+  html+='<div class="mask-note"><svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M12 3l9 16H3zM12 10v4M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>处分须联动积分扣分 / 考核 / 评优，执行后归档留痕。</div>';
+  document.getElementById('punishBody').innerHTML=html;
+}
+
+/* init */
+renderScoreLedger(); renderAppeal(); renderWarns('all'); renderXf('all'); renderPunish();
+function mcOk(){ if(window._mcOk) window._mcOk(); else closeModal('modalConfirm'); }
+
+
+/* 侧栏手风琴：选中一级/二级菜单时，其余一级菜单自动收起 */
+function toggleNavGroup(el){ var g = el.closest('.nav-group'); if(!g) return; var open = g.classList.contains('collapsed'); document.querySelectorAll('.nav-group').forEach(function(x){ x.classList.add('collapsed'); }); if(open){ g.classList.remove('collapsed'); } }
+function navLeaf(el){ var pg = el.closest('.nav-group'); document.querySelectorAll('.nav-group').forEach(function(x){ if(x !== pg) x.classList.add('collapsed'); }); if(pg) pg.classList.remove('collapsed'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>党建管理系统 · 原型门户</title>
+<!--
+  设计系统：党建管理系统 V1.0 原型门户
+  设计令牌来源：设计令牌.md 的 :root 变量块（原样保留，不得改色值）
+  模板类型：原型门户（卡片式导航 + 党建红品牌标题）
+  说明：本页为 6 个交互式 HTML 原型的统一入口，双击任意页面即可离线运行。
+-->
+<style>
+/* ============================================================
+   设计令牌 :root 块（来自 设计令牌.md，强制原样保留，锁死色值）
+   ============================================================ */
+:root {
+  /* —— 品牌 / 功能 / 中性（强制锁死） —— */
+  --brand-red: #C21F30;
+  --brand-gold: #C89A4B;
+  --brand-blue: #2D6DB5;
+  --state-green: #2E8B57;
+  --state-orange: #D97706;
+  --bg-page: #F5F6F8;
+  --bg-card: #FFFFFF;
+  --text-primary: #1F2329;
+  --text-secondary: #6B7280;
+
+  /* —— 状态语义（文字+色块，满足 AA） —— */
+  --state-red-bg: #FCE9EB;   --state-red-text: #A3162A;   --state-red-dot: #C21F30;
+  --state-orange-bg: #FCEFD9; --state-orange-text: #9A5B04; --state-orange-dot: #D97706;
+  --state-blue-bg: #E7F0FA;   --state-blue-text: #1E4E8C;   --state-blue-dot: #2D6DB5;
+  --state-green-bg: #E6F4EC;  --state-green-text: #1F6B41;  --state-green-dot: #2E8B57;
+  --state-gray-bg: #EEF0F2;   --state-gray-text: #4B5563;   --state-gray-dot: #9CA3AF;
+
+  /* —— 大屏深色背景梯度 —— */
+  --screen-bg-top: #0F1B2D;
+  --screen-bg-bottom: #12233B;
+  --screen-panel: #12233B;
+  --screen-card: #16263F;
+  --screen-border: #243B5C;
+  --screen-divider: #1E324F;
+  --screen-text: #E6ECF5;
+  --screen-text-sub: #9FB0C4;
+  --screen-text-muted: #6E8099;
+
+  /* —— 图表强调色序列（大屏） —— */
+  --chart-1: #E25A6B; --chart-2: #E6BC6E; --chart-3: #5B9BD9; --chart-4: #54B37F;
+  --chart-5: #EC9A3C; --chart-6: #3FC9D4; --chart-7: #A98AE0; --chart-8: #F2D873;
+
+  /* —— 字体（信创兼容，无外链） —— */
+  --font-sans: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Source Han Sans SC",
+               "思源黑体", "Noto Sans CJK SC", "WenQuanYi Micro Hei", "文泉驿微米黑",
+               -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+               Arial, sans-serif;
+  --font-num: var(--font-sans);
+
+  /* —— 字号阶梯（强制 20/16/14/12） —— */
+  --fs-title: 20px; --fs-module: 16px; --fs-body: 14px; --fs-caption: 12px; --fs-flip: 44px;
+
+  /* —— 间距 / 栅格（强制外壳） —— */
+  --nav-width: 216px; --topbar-height: 64px; --content-padding: 24px;
+  --card-gap: 16px; --aside-width: 360px;
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px; --space-12: 48px;
+
+  /* —— 圆角 / 边框 / 阴影 —— */
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-pill: 999px;
+  --border-color: #E5E7EB; --border-light: #EEF0F2;
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px rgba(31,35,41,0.06);
+  --shadow-sm: 0 2px 8px rgba(31,35,41,0.08);
+  --shadow-md: 0 6px 16px rgba(31,35,41,0.12);
+}
+
+/* ============================================================
+   原型门户专用样式
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { text-decoration: none; color: inherit; }
+
+/* 顶部品牌栏 */
+.portal-top {
+  height: 64px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-8);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand .emblem {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--brand-red);
+  box-shadow: 0 0 0 3px rgba(194,31,48,0.12);
+}
+.brand .emblem svg { width: 20px; height: 20px; }
+.brand-name { font-size: var(--fs-module); font-weight: 700; letter-spacing: .5px; }
+.brand-sub { font-size: var(--fs-caption); color: var(--text-secondary); font-weight: 500; }
+.portal-top .sys-tag {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 12px;
+  background: var(--state-blue-bg); color: var(--state-blue-text);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption); font-weight: 600;
+}
+
+/* 主区域 */
+.portal-main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-8) var(--space-10);
+}
+.hero {
+  margin-bottom: var(--space-10);
+}
+.hero h1 {
+  font-size: 28px; font-weight: 700; line-height: 1.3;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero h1 .accent { color: var(--brand-red); }
+.hero p {
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  font-size: 15px;
+  max-width: 720px;
+}
+.hero .meta {
+  margin-top: var(--space-5);
+  display: flex; gap: var(--space-3); flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 28px; padding: 0 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-caption); color: var(--text-secondary);
+}
+.chip b { color: var(--text-primary); font-weight: 600; }
+
+/* 卡片网格 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--card-gap);
+}
+.entry {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  display: flex; flex-direction: column;
+  transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+  position: relative;
+  overflow: hidden;
+}
+.entry:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  border-color: #D7DBE0;
+}
+.entry::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--accent, var(--brand-red));
+  opacity: .9;
+}
+.entry .ico {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  display: grid; place-items: center;
+  background: var(--accent-bg, #FCE9EB);
+  color: var(--accent, var(--brand-red));
+  margin-bottom: var(--space-4);
+}
+.entry .ico svg { width: 24px; height: 24px; }
+.entry h3 { font-size: var(--fs-module); font-weight: 600; }
+.entry .mod {
+  margin-top: 6px;
+  font-size: var(--fs-caption); color: var(--text-secondary);
+}
+.entry .desc {
+  margin-top: var(--space-3);
+  font-size: var(--fs-body); color: var(--text-secondary);
+  flex: 1;
+}
+.entry .blue {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: #F4F8FC;
+  border-left: 2px solid var(--brand-blue);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-caption);
+  color: var(--state-blue-text);
+  line-height: 1.7;
+}
+.entry .blue b { color: var(--brand-blue); }
+.entry .open {
+  margin-top: var(--space-5);
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 16px;
+  background: var(--brand-red); color: #fff;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-body); font-weight: 500;
+  transition: background .15s ease;
+}
+.entry .open:hover { background: #A3162A; }
+.entry .open svg { width: 16px; height: 16px; }
+
+/* 底部说明 */
+.portal-foot {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-8) var(--space-10);
+  border-top: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.portal-foot .note { display: flex; align-items: center; gap: 8px; }
+.portal-foot svg { width: 15px; height: 15px; color: var(--state-green); }
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<!-- 顶部品牌栏 -->
+<header class="portal-top">
+  <div class="brand">
+    <span class="emblem" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2.5l2.6 5.9 6.4.6-4.9 4.3 1.5 6.3L12 16.9 6.4 19.6 7.9 13.3 3 8.9l6.4-.6L12 2.5z" fill="#fff"/></svg>
+    </span>
+    <div>
+      <div class="brand-name">党建管理系统</div>
+      <div class="brand-sub">Party Building Management System</div>
+    </div>
+  </div>
+  <span class="sys-tag">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    V1.0 交互式原型 · 设计系统 IBM Carbon 政务变体
+  </span>
+</header>
+
+<main class="portal-main">
+  <!-- 主标题 -->
+  <section class="hero">
+    <h1>党建管理系统 · <span class="accent">原型门户</span></h1>
+    <p>首批交付 5 个核心页面的高保真交互式 HTML 原型，覆盖组织管理、发展党员、监督考核与党委数据驾驶舱。所有页面资源内联、无外部依赖，双击即可离线运行。</p>
+    <div class="meta">
+      <span class="chip">设计规范：<b>政务庄重型</b></span>
+      <span class="chip">强制色值锁定：<b>#C21F30</b></span>
+      <span class="chip">状态语义：<b>红/橙/蓝/绿/灰 文字+色块</b></span>
+      <span class="chip">图表引擎：<b>内联 SVG / 纯 CSS（无 CDN）</b></span>
+    </div>
+  </section>
+
+  <!-- 页面入口卡片 -->
+  <section class="grid">
+
+    <!-- 01 -->
+    <a class="entry" href="01-首页工作台.html" style="--accent:var(--brand-red); --accent-bg:#FCE9EB;">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 13h7V4H4v9zm9 7h7v-9h-7v9zM4 20h7v-4H4v4zm9-13h7V4h-7v3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></span>
+      <h3>首页工作台</h3>
+      <div class="mod">模块 4.1 · 首页工作台（PC）</div>
+      <div class="desc">一个页面看清待办、识别风险、进入高频工作。四指标卡 + 我的待办 + 重点预警 + 组织生活日历 + 三项趋势图。</div>
+      <div class="blue"><b>蓝色新增：</b>顶部「导入党员」呼应账号批量导入；为党总支/审计管理员预留菜单差异占位。</div>
+      <span class="open">打开原型 <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+    <!-- 02 -->
+    <a class="entry" href="02-组织与党员.html" style="--accent:var(--brand-blue); --accent-bg:#E7F0FA;">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l3 3-3 3-3-3 3-3zm0 7l3 3-3 3-3-3 3-3zm-7 0l3 3-3 3-3-3 3-3zm14 0l3 3-3 3-3-3 3-3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+      <h3>组织与党员</h3>
+      <div class="mod">模块 4.2 · 组织与党员（PC）</div>
+      <div class="desc">组织全生命周期 + 党员全量管理。四级组织树、党员名册（脱敏）、党员档案 Tab，以及组织关系转接状态机子视图。</div>
+      <div class="blue"><b>蓝色新增（验收②）：</b>转接 6 态列表 + 状态机视图；在途/待回执=蓝、异常/终止=红、已接收=绿；跨省异常原因+重发+人工兜底。</div>
+      <span class="open">打开原型 <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+    <!-- 03 -->
+    <a class="entry" href="03-发展党员.html" style="--accent:var(--state-green); --accent-bg:#E6F4EC;">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="8" cy="17" r="2" fill="currentColor"/></svg></span>
+      <h3>发展党员</h3>
+      <div class="mod">模块 4.2 子页 · 发展党员（PC）</div>
+      <div class="desc">25 节点刚性流程线上管控。阶段化步骤条 + 当前节点表单 + 固定流程时间轴 + 提交前合并校验清单。</div>
+      <div class="blue"><b>蓝色新增（验收①）：</b>4 处法定公示节点（蓝倒计时/红异议分支）；退回/终止分支；公示+材料+时间合并拦截。</div>
+      <span class="open">打开原型 <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+    <!-- 04 -->
+    <a class="entry" href="04-监督考核.html" style="--accent:var(--brand-gold); --accent-bg:#F8F1E2;">
+      <span class="ico"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></span>
+      <h3>监督考核</h3>
+      <div class="mod">模块 4.6 · 监督考核（PC）</div>
+      <div class="desc">积分透明可追溯、考核闭环、风险预警统一聚合。积分溯源、申诉状态机、支部考核四步、预警清单与党风廉政子模块。</div>
+      <div class="blue"><b>蓝色新增（验收③）：</b>积分溯源（单据ID）；申诉状态机；党风廉政·信访闭环 + 党纪处分工作流；预警补充换届/信访超期。</div>
+      <span class="open">打开原型 <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+    <!-- 05 -->
+    <a class="entry" href="05-党委数据驾驶舱.html" style="--accent:var(--screen-bg-top); --accent-bg:#16263F; color:#E6ECF5;">
+      <span class="ico" style="background:#16263F; color:#F2D873;"><svg viewBox="0 0 24 24" fill="none"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 4-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h3>党委数据驾驶舱</h3>
+      <div class="mod">模块 4.8 · 大屏深色（16:9）</div>
+      <div class="desc">宏观数据可视化与实时预警监控。翻牌核心指标、组织层级旭日图、趋势与达标仪表盘、排行与六类预警聚合、底部红色滚动预警栏。</div>
+      <div class="blue" style="background:#16263F; color:#9FB0C4; border-left-color:#F2D873;"><b style="color:#F2D873;">蓝色新增（验收⑥）：</b>六类预警聚合卡（待办/超期/红色/信访/转接/换届）；底部专项滚动预警（发展逾期/欠缴/转接/信访）可下钻。</div>
+      <span class="open" style="background:#C21F30;">打开原型 <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+
+  </section>
+</main>
+
+<footer class="portal-foot">
+  <span class="note"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg> 6 个页面均为离线原型，资源内联、无外部依赖，可直接双击运行</span>
+  <span class="note"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg> 设计令牌 100% 遵循《视觉规范》锁死色值 / 字号 / 栅格 / 状态语义</span>
+</footer>
+
+</body>
+</html>
