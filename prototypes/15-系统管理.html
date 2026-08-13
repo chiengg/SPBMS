@@ -1133,9 +1133,10 @@ function switchSub(key){
 function syncNavActive(key){
   Array.prototype.slice.call(document.querySelectorAll('.nav-sub .nav-item')).forEach(function(a){ a.classList.remove('active'); });
   Array.prototype.slice.call(document.querySelectorAll('.nav-group')).forEach(function(g){ g.classList.add('collapsed'); });
+  Array.prototype.slice.call(document.querySelectorAll('.nav-group-title')).forEach(function(t){ t.classList.remove('active'); });
   var map = { role:'权限与角色管理', user:'用户管理', msg:'消息中心', export:'台账导出引擎', config:'系统配置', cert:'党员证明开具' };
   var items = Array.prototype.slice.call(document.querySelectorAll('.nav-sub .nav-item'));
-  for(var i=0;i<items.length;i++){ if(items[i].textContent.trim()===map[key]){ items[i].classList.add('active'); var g=items[i].closest('.nav-group'); if(g) g.classList.remove('collapsed'); break; } }
+  for(var i=0;i<items.length;i++){ if(items[i].textContent.trim()===map[key]){ items[i].classList.add('active'); var g=items[i].closest('.nav-group'); if(g){ g.classList.remove('collapsed'); var t=g.querySelector('.nav-group-title'); if(t) t.classList.add('active'); } break; } }
 }
 
 function init(){
