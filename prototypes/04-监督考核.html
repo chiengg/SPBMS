@@ -251,8 +251,10 @@ table.tb tbody tr:hover { background: var(--bg-page); }
     <div class="nav-group active">
       <div class="nav-group-title active" onclick="toggleNavGroup(this)"><svg class="ng-icon" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5.3 5.8.6-4.3 4 1.3 5.7L12 15.9 6.7 18.6 8 12.9 3.7 8.9l5.8-.6L12 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span class="ng-label">监督考核</span><span class="nav-arrow">▾</span></div>
       <div class="nav-sub">
-        <a class="nav-item active" href="04-监督考核.html" onclick="navLeaf(this)">党员积分管理</a>
-        <a class="nav-item" href="04-监督考核.html" onclick="navLeaf(this)">支部考核与党风廉政</a>
+        <a class="nav-item active" href="04-监督考核.html#score" onclick="navLeaf(this)">党员积分管理</a>
+        <a class="nav-item" href="04-监督考核.html#assess" onclick="navLeaf(this)">支部考核</a>
+        <a class="nav-item" href="04-监督考核.html#warn" onclick="navLeaf(this)">监督考核</a>
+        <a class="nav-item" href="04-监督考核.html#disc" onclick="navLeaf(this)">党风廉政</a>
       </div>
     </div>
     <div class="nav-group collapsed">
@@ -731,6 +733,20 @@ function mcOk(){ if(window._mcOk) window._mcOk(); else closeModal('modalConfirm'
 /* 侧栏手风琴：选中一级/二级菜单时，其余一级菜单自动收起 */
 function toggleNavGroup(el){ var g = el.closest('.nav-group'); if(!g) return; var open = g.classList.contains('collapsed'); document.querySelectorAll('.nav-group').forEach(function(x){ x.classList.add('collapsed'); }); if(open){ g.classList.remove('collapsed'); } }
 function navLeaf(el){ var pg = el.closest('.nav-group'); document.querySelectorAll('.nav-group').forEach(function(x){ if(x !== pg) x.classList.add('collapsed'); }); if(pg) pg.classList.remove('collapsed'); }
+
+/* 监督考核二级菜单 hash 路由：点击侧栏菜单切换对应 Tab 并联动高亮 */
+function routeFromHash(){
+  var h = (location.hash||'').replace('#','') || 'score';
+  var valid = {score:1, assess:1, warn:1, disc:1};
+  if(!valid[h]) h = 'score';
+  if(typeof switchSub === 'function') switchSub(h);
+  document.querySelectorAll('a.nav-item[href^="04-监督考核.html#"]').forEach(function(a){ a.classList.remove('active'); });
+  var cur = document.querySelector('a.nav-item[href="04-监督考核.html#'+h+'"]');
+  if(cur) cur.classList.add('active');
+}
+window.addEventListener('hashchange', routeFromHash);
+if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', routeFromHash); }
+else { routeFromHash(); }
 </script>
 </body>
 </html>
